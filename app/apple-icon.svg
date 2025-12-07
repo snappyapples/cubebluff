@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <!-- Blue dice showing 6-face -->
+  <rect x="10" y="10" width="80" height="80" rx="12" fill="#3b82f6" stroke="#2563eb" stroke-width="3"/>
+
+  <!-- Dots for 6-face (2 columns of 3) -->
+  <!-- Left column -->
+  <circle cx="32" cy="30" r="8" fill="white"/>
+  <circle cx="32" cy="50" r="8" fill="white"/>
+  <circle cx="32" cy="70" r="8" fill="white"/>
+
+  <!-- Right column -->
+  <circle cx="68" cy="30" r="8" fill="white"/>
+  <circle cx="68" cy="50" r="8" fill="white"/>
+  <circle cx="68" cy="70" r="8" fill="white"/>
+</svg>

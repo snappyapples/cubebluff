@@ -1,0 +1,124 @@
+/* Import Poppins font - must be first */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Global styles */
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: 'Poppins', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Prevent overscroll/pull-to-refresh during game */
+body.in-game {
+  overscroll-behavior: none;
+}
+
+/* Custom scrollbar for dark theme */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #1f2937;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #4b5563;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #6b7280;
+}
+
+/* Touch-friendly targets */
+.touch-target {
+  min-height: 48px;
+  min-width: 48px;
+}
+
+/* Disable text selection on game elements */
+.no-select {
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* Safe area padding for mobile */
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* Dice face styling */
+.dice-face {
+  backface-visibility: visible;
+}
+
+/* Token indicator dots */
+.token-dot {
+  @apply w-2 h-2 rounded-full bg-token-gold;
+}
+
+/* Claim grid item */
+.claim-item {
+  @apply px-3 py-2 rounded-lg cursor-pointer transition-all duration-150;
+  @apply bg-panel-bg hover:bg-claim-blue/30 border border-transparent;
+}
+
+.claim-item.selected {
+  @apply bg-claim-blue border-claim-blue text-white;
+}
+
+.claim-item.special {
+  @apply border-token-gold/50;
+}
+
+/* Button variants */
+.btn-primary {
+  @apply px-6 py-3 bg-claim-blue hover:bg-brand-blue-dark text-white font-semibold rounded-xl;
+  @apply transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98];
+  @apply disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none;
+}
+
+.btn-danger {
+  @apply px-6 py-3 bg-bluff-red hover:bg-red-700 text-white font-semibold rounded-xl;
+  @apply transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98];
+  @apply disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none;
+}
+
+.btn-secondary {
+  @apply px-6 py-3 bg-panel-bg hover:bg-card-bg text-white font-semibold rounded-xl;
+  @apply border border-gray-600 transition-all duration-200;
+  @apply disabled:opacity-50 disabled:cursor-not-allowed;
+}
+
+/* Card/Panel styling */
+.game-panel {
+  @apply bg-panel-bg rounded-2xl p-4 shadow-lg;
+}
+
+.game-card {
+  @apply bg-card-bg rounded-xl p-3;
+}
+
+/* Glow effects */
+.glow-blue {
+  box-shadow: 0 0 20px rgba(59, 130, 246, 0.5);
+}
+
+.glow-gold {
+  box-shadow: 0 0 20px rgba(251, 191, 36, 0.5);
+}
+
+.glow-red {
+  box-shadow: 0 0 20px rgba(220, 38, 38, 0.5);
+}
