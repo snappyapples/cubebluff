@@ -429,7 +429,7 @@ export default function RoomPage({ params }: { params: Promise<{ roomId: string 
     return (
       <div className="min-h-screen">
         <Header onHowToPlay={() => setShowRules(true)} />
-        {showRules && <RulesModal onClose={() => setShowRules(false)} />}
+        {showRules && <RulesModal isOpen={showRules} onClose={() => setShowRules(false)} />}
         <main className="max-w-md mx-auto p-4">
           <div className="game-panel">
             <h2 className="text-xl font-bold text-white mb-4 text-center">
@@ -474,7 +474,7 @@ export default function RoomPage({ params }: { params: Promise<{ roomId: string 
     return (
       <div className="min-h-screen">
         <Header onHowToPlay={() => setShowRules(true)} />
-        {showRules && <RulesModal onClose={() => setShowRules(false)} />}
+        {showRules && <RulesModal isOpen={showRules} onClose={() => setShowRules(false)} />}
         <main className="max-w-md mx-auto p-4">
           {/* Game Code Header - Prominent */}
           <div className="bg-gradient-to-r from-brand-blue/20 via-blue-500/20 to-cyan-500/20 border-2 border-brand-blue rounded-lg p-6 mb-6 backdrop-blur-sm">
@@ -586,7 +586,7 @@ export default function RoomPage({ params }: { params: Promise<{ roomId: string 
   return (
     <div className="min-h-screen flex flex-col">
       <Header onHowToPlay={() => setShowRules(true)} />
-      {showRules && <RulesModal onClose={() => setShowRules(false)} />}
+      {showRules && <RulesModal isOpen={showRules} onClose={() => setShowRules(false)} />}
 
       <main className="flex-1 max-w-lg mx-auto w-full p-4 flex flex-col overflow-hidden">
         {/* Compact Round Header */}
