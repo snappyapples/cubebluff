@@ -12,12 +12,22 @@ import RulesModal from '@/components/RulesModal'
 import ClaimAnnouncement from '@/components/ClaimAnnouncement'
 import BluffVoting from '@/components/BluffVoting'
 import { GameState, Roll, Player, Resolution } from '@/lib/types'
+import { useSounds } from '@/hooks/useSounds'
 
 const POLL_INTERVAL = 2000 // 2 seconds
 
 export default function RoomPage({ params }: { params: Promise<{ roomId: string }> }) {
   const { roomId } = use(params)
   const router = useRouter()
+  const { play: playSound } = useSounds()
+
+  // Track previous state for sound triggers on polling updates
+  const prevStateRef = useRef<{
+    phase: string | null
+    currentTurnPlayerId: string | null
+    currentClaim: string | null
+    resolutionType: string | null
+  }>({ phase: null, currentTurnPlayerId: null, currentClaim: null, resolutionType: null })
 
   // State
   const [gameState, setGameState] = useState<GameState | null>(null)
@@ -306,6 +316,8 @@ export default function RoomPage({ params }: { params: Promise<{ roomId: string 
       const data = await response.json()
 
       if (data.success && data.roll) {
+        // Play roll sound
+        playSound('roll')
         // Block polling during animation
         isRollingRef.current = true
         // Increment rollId to force dice remount and animation
@@ -356,6 +368,12 @@ export default function RoomPage({ params }: { params: Promise<{ roomId: string 
       const data = await response.json()
 
       if (data.success) {
+        // Play claim sound
+        playSound('claim')
+        // Play special 21 sound if claiming 21
+        if (claim.display === '21') {
+          playSound('twentyOne')
+        }
         setGameState(data.gameState)
         setMyRoll(null) // Clear after claiming
       } else {
@@ -386,6 +404,8 @@ export default function RoomPage({ params }: { params: Promise<{ roomId: string 
       const data = await response.json()
 
       if (data.success && data.roll) {
+        // Play roll sound
+        playSound('roll')
         // Block polling during animation
         isRollingRef.current = true
         // Increment rollId to force dice remount and animation
@@ -433,6 +453,8 @@ export default function RoomPage({ params }: { params: Promise<{ roomId: string 
       const data = await response.json()
 
       if (data.success) {
+        // Play dramatic bluff call sound
+        playSound('bluffCall')
         setGameState(data.gameState)
         setMyRoll(null)
       } else {
@@ -602,6 +624,49 @@ export default function RoomPage({ params }: { params: Promise<{ roomId: string 
       seenVotesRef.current = {}
     }
   }, [gameState?.phase])
+
+  // Sound effects for state changes detected via polling
+  useEffect(() => {
+    if (!gameState) return
+
+    const prev = prevStateRef.current
+    const phase = gameState.phase
+    const resolution = gameState.lastResolution
+
+    // Bluff resolution sound - play when entering resolving_bluff phase
+    if (phase === 'resolving_bluff' && prev.phase !== 'resolving_bluff' && resolution) {
+      // Determine if bluff was caught (caller wins) or claimer was honest (caller loses)
+      if (resolution.type === 'bluff_success') {
+        playSound('bluffSuccess') // Caller was right - bluff caught!
+      } else if (resolution.type === 'bluff_fail') {
+        playSound('bluffFail') // Caller was wrong - claimer was honest
+      }
+    }
+
+    // Player eliminated sound
+    if (phase === 'player_eliminated' && prev.phase !== 'player_eliminated') {
+      playSound('elimination')
+    }
+
+    // Game victory sound
+    if (phase === 'finished' && prev.phase !== 'finished') {
+      playSound('victory')
+    }
+
+    // Token lost sound (when resolution shows token loss, after bluff call)
+    if (resolution && prev.resolutionType !== resolution.type && resolution.tokensLost > 0) {
+      // Slight delay so it doesn't overlap with bluffSuccess/bluffFail
+      setTimeout(() => playSound('tokenLost'), 500)
+    }
+
+    // Update prev state ref
+    prevStateRef.current = {
+      phase,
+      currentTurnPlayerId: gameState.currentTurnPlayerId,
+      currentClaim: gameState.currentClaim?.display || null,
+      resolutionType: resolution?.type || null,
+    }
+  }, [gameState, playSound])
 
   // Debug output
   console.log('Render state:', {
