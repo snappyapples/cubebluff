@@ -829,14 +829,13 @@ export default function RoomPage({ params }: { params: Promise<{ roomId: string 
           />
         </div>
 
-        {/* Bluff Voting - Show during awaiting_response or awaiting_21_choice */}
+        {/* Bluff Voting - Fixed corner buttons for spectators during awaiting_response or awaiting_21_choice */}
         {(gameState.phase === 'awaiting_response' || gameState.phase === 'awaiting_21_choice') && gameState.currentClaim && (
           <BluffVoting
             players={gameState.players}
             myPlayerId={myGamePlayerId}
             currentTurnPlayerId={gameState.currentTurnPlayerId}
             previousClaimerId={gameState.previousClaimerId}
-            votes={gameState.bluffVotes || {}}
             voteToasts={voteToasts}
             onVote={handleVote}
             canVote={!isLoading}

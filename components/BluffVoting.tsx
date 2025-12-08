@@ -14,7 +14,6 @@ interface BluffVotingProps {
   myPlayerId: string | null
   currentTurnPlayerId: string | null
   previousClaimerId: string | null
-  votes: { [playerId: string]: 'bluff' | 'truth' }
   voteToasts: VoteToast[]
   onVote: (vote: 'bluff' | 'truth') => void
   canVote: boolean
@@ -25,13 +24,10 @@ export default function BluffVoting({
   myPlayerId,
   currentTurnPlayerId,
   previousClaimerId,
-  votes,
   voteToasts,
   onVote,
   canVote
 }: BluffVotingProps) {
-  const myVote = myPlayerId ? votes[myPlayerId] : null
-
   // Can this player vote? Not the claimer, not the responder (current turn), and not eliminated
   const myPlayer = players.find(p => p.id === myPlayerId)
   const isEligible = canVote &&
@@ -41,41 +37,36 @@ export default function BluffVoting({
 
   return (
     <>
-      {/* Reaction buttons - compact and non-intrusive */}
+      {/* Fixed corner buttons - only for eligible voters */}
       {isEligible && (
-        <div className="flex justify-center gap-2 mb-3">
+        <>
+          {/* Bottom left - Bluff button */}
           <button
             onClick={() => onVote('bluff')}
-            className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all ${
-              myVote === 'bluff'
-                ? 'bg-bluff-red text-white shadow-lg'
-                : 'bg-gray-800 text-gray-300 hover:bg-bluff-red/30 border border-gray-700'
-            }`}
+            className="fixed bottom-20 left-4 z-40 px-4 py-2 rounded-full text-sm font-bold bg-bluff-red/80 text-white shadow-lg hover:bg-bluff-red active:scale-95 transition-all"
           >
-            🎭 Bluff
+            BLUFF
           </button>
+
+          {/* Bottom right - Truth button */}
           <button
             onClick={() => onVote('truth')}
-            className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all ${
-              myVote === 'truth'
-                ? 'bg-truth-green text-white shadow-lg'
-                : 'bg-gray-800 text-gray-300 hover:bg-truth-green/30 border border-gray-700'
-            }`}
+            className="fixed bottom-20 right-4 z-40 px-4 py-2 rounded-full text-sm font-bold bg-truth-green/80 text-white shadow-lg hover:bg-truth-green active:scale-95 transition-all"
           >
-            ✓ Truth
+            TRUTH
           </button>
-        </div>
+        </>
       )}
 
-      {/* Toast notifications at bottom */}
-      <div className="fixed bottom-16 left-0 right-0 pointer-events-none z-40 flex flex-col items-center gap-2 px-4">
+      {/* Toast notifications - centered overlay */}
+      <div className="fixed bottom-32 left-0 right-0 pointer-events-none z-50 flex flex-col items-center gap-2 px-4">
         {voteToasts.map((toast) => (
           <div
             key={toast.id}
-            className={`px-4 py-2 rounded-full text-sm font-medium shadow-lg animate-fade-in-up ${
+            className={`px-5 py-2.5 rounded-full text-base font-semibold shadow-xl animate-fade-in-up ${
               toast.vote === 'bluff'
-                ? 'bg-bluff-red/90 text-white'
-                : 'bg-truth-green/90 text-white'
+                ? 'bg-bluff-red text-white'
+                : 'bg-truth-green text-white'
             }`}
           >
             {toast.playerName} thinks {toast.vote === 'bluff' ? 'BLUFF' : 'TRUTH'}
