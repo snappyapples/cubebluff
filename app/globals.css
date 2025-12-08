@@ -158,3 +158,71 @@ body.in-game {
 .glow-red {
   box-shadow: 0 0 20px rgba(220, 38, 38, 0.5);
 }
+
+/* 3D Spinning Dice for Home Screen */
+.spinning-dice-container {
+  width: 60px;
+  height: 60px;
+  position: relative;
+  transform-style: preserve-3d;
+  animation: spin-dice 12s infinite linear;
+}
+
+.spinning-dice-container.dice-2 {
+  animation: spin-dice-alt 14s infinite linear;
+}
+
+@keyframes spin-dice {
+  0% {
+    transform: rotateX(-25deg) rotateY(35deg);
+  }
+  100% {
+    transform: rotateX(-25deg) rotateY(395deg);
+  }
+}
+
+@keyframes spin-dice-alt {
+  0% {
+    transform: rotateX(-30deg) rotateY(55deg);
+  }
+  100% {
+    transform: rotateX(-30deg) rotateY(415deg);
+  }
+}
+
+.spinning-dice-face {
+  position: absolute;
+  width: 60px;
+  height: 60px;
+  background: linear-gradient(145deg, #3b82f6, #2563eb);
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 6px;
+  box-sizing: border-box;
+}
+
+.spinning-dice-face.face-1 { transform: rotateY(0deg) translateZ(30px); }
+.spinning-dice-face.face-2 { transform: rotateY(90deg) translateZ(30px); }
+.spinning-dice-face.face-3 { transform: rotateY(180deg) translateZ(30px); }
+.spinning-dice-face.face-4 { transform: rotateY(-90deg) translateZ(30px); }
+.spinning-dice-face.face-5 { transform: rotateX(90deg) translateZ(30px); }
+.spinning-dice-face.face-6 { transform: rotateX(-90deg) translateZ(30px); }
+
+.spinning-dice-dots {
+  display: grid;
+  width: 100%;
+  height: 100%;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  place-items: center;
+}
+
+.spinning-dice-dot {
+  width: 10px;
+  height: 10px;
+  background-color: white;
+  border-radius: 50%;
+}

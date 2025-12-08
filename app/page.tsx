@@ -6,6 +6,7 @@ import Header from '@/components/Header'
 import CreateRoomModal from '@/components/CreateRoomModal'
 import JoinRoomModal from '@/components/JoinRoomModal'
 import RulesModal from '@/components/RulesModal'
+import SpinningDice from '@/components/SpinningDice'
 
 function HomeContent() {
   const searchParams = useSearchParams()
@@ -61,24 +62,9 @@ function HomeContent() {
       <div className="relative z-10 flex flex-col items-center max-w-md w-full">
         {/* Logo / Title */}
         <div className="mb-8 text-center">
-          {/* Dice Icons */}
-          <div className="flex justify-center gap-3 mb-4">
-            <div className="w-16 h-16 bg-brand-blue rounded-xl flex items-center justify-center shadow-lg transform -rotate-6 hover:rotate-0 transition-transform">
-              <div className="grid grid-cols-2 gap-1 p-2">
-                <div className="w-3 h-3 bg-white rounded-full" />
-                <div className="w-3 h-3 bg-white rounded-full" />
-                <div className="w-3 h-3 bg-white rounded-full" />
-                <div className="w-3 h-3 bg-white rounded-full" />
-              </div>
-            </div>
-            <div className="w-16 h-16 bg-brand-blue-dark rounded-xl flex items-center justify-center shadow-lg transform rotate-6 hover:rotate-0 transition-transform">
-              <div className="grid grid-cols-2 gap-1 p-2">
-                <div className="w-3 h-3 bg-white rounded-full" />
-                <div className="w-3 h-3 bg-transparent" />
-                <div className="w-3 h-3 bg-transparent" />
-                <div className="w-3 h-3 bg-white rounded-full" />
-              </div>
-            </div>
+          {/* Spinning 3D Dice */}
+          <div className="mb-6">
+            <SpinningDice />
           </div>
 
           <h1 className="text-5xl font-bold text-white mb-2">
