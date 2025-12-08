@@ -535,7 +535,7 @@ export default function RoomPage({ params }: { params: Promise<{ roomId: string 
     setVoteToasts(prev => [...prev, newToast])
 
     // Mark as seen so we don't duplicate when poll comes back
-    seenVotesRef.current[currentPlayerId] = `${vote}:${Date.now()}`
+    seenVotesRef.current[currentPlayerId] = Date.now()
 
     // Auto-remove toast after 3 seconds
     setTimeout(() => {

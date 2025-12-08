@@ -105,7 +105,7 @@ export interface GameState {
   lastResolution: Resolution | null
 
   // Crowd voting - players guess if current claim is bluff or truth
-  bluffVotes?: { [playerId: string]: 'bluff' | 'truth' }
+  bluffVotes?: { [playerId: string]: { vote: 'bluff' | 'truth'; timestamp: number } }
 
   // Timestamps for auto-transitions (milliseconds since epoch)
   resolutionAt?: number         // When bluff was resolved (show for 4 seconds)
