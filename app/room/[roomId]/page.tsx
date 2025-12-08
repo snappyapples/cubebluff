@@ -40,6 +40,16 @@ export default function RoomPage({ params }: { params: Promise<{ roomId: string 
   const [lastSeenClaim, setLastSeenClaim] = useState<string | null>(null)
   const [showClaimAnnouncement, setShowClaimAnnouncement] = useState(false)
 
+  // Vote toast system
+  interface VoteToast {
+    id: string
+    playerName: string
+    vote: 'bluff' | 'truth'
+    timestamp: number
+  }
+  const [voteToasts, setVoteToasts] = useState<VoteToast[]>([])
+  const seenVotesRef = useRef<{ [key: string]: string }>({}) // playerId -> "vote:timestamp"
+
   // Join form state
   const [nickname, setNickname] = useState('')
   const [needsToJoin, setNeedsToJoin] = useState(false)
@@ -451,10 +461,29 @@ export default function RoomPage({ params }: { params: Promise<{ roomId: string 
     setTimeout(() => setCopied(false), 2000)
   }
 
-  // Handle bluff vote
-  const handleVote = async (vote: 'bluff' | 'truth' | null) => {
+  // Handle bluff vote - sends vote and creates local toast immediately
+  const handleVote = async (vote: 'bluff' | 'truth') => {
     const currentPlayerId = localStorage.getItem('playerId')
+    const currentNickname = localStorage.getItem('nickname') || 'You'
     if (!currentPlayerId) return
+
+    // Create immediate local toast for the voter
+    const toastId = `${currentPlayerId}-${Date.now()}`
+    const newToast: VoteToast = {
+      id: toastId,
+      playerName: currentNickname,
+      vote,
+      timestamp: Date.now()
+    }
+    setVoteToasts(prev => [...prev, newToast])
+
+    // Mark as seen so we don't duplicate when poll comes back
+    seenVotesRef.current[currentPlayerId] = `${vote}:${Date.now()}`
+
+    // Auto-remove toast after 3 seconds
+    setTimeout(() => {
+      setVoteToasts(prev => prev.filter(t => t.id !== toastId))
+    }, 3000)
 
     try {
       await fetch(`/api/rooms/${roomId}/vote`, {
@@ -467,6 +496,52 @@ export default function RoomPage({ params }: { params: Promise<{ roomId: string 
       console.error('Failed to submit vote:', err)
     }
   }
+
+  // Detect new votes from other players and show toasts
+  useEffect(() => {
+    if (!gameState?.bluffVotes || !gameState.players) return
+
+    const votes = gameState.bluffVotes
+    const now = Date.now()
+
+    Object.entries(votes).forEach(([voterId, vote]) => {
+      // Skip our own votes (we show them immediately)
+      if (voterId === myGamePlayerId) return
+
+      // Check if this is a new vote we haven't seen
+      const seenKey = seenVotesRef.current[voterId]
+      const currentKey = `${vote}:recent`
+
+      if (seenKey !== currentKey) {
+        // New vote! Show toast
+        const voter = gameState.players.find(p => p.id === voterId)
+        if (voter) {
+          const toastId = `${voterId}-${now}`
+          const newToast: VoteToast = {
+            id: toastId,
+            playerName: voter.name,
+            vote,
+            timestamp: now
+          }
+          setVoteToasts(prev => [...prev, newToast])
+
+          // Auto-remove toast after 3 seconds
+          setTimeout(() => {
+            setVoteToasts(prev => prev.filter(t => t.id !== toastId))
+          }, 3000)
+        }
+        seenVotesRef.current[voterId] = currentKey
+      }
+    })
+  }, [gameState?.bluffVotes, gameState?.players, myGamePlayerId])
+
+  // Clear vote toasts and reset seen votes when round changes
+  useEffect(() => {
+    if (gameState?.phase === 'round_start' || gameState?.phase === 'resolving_bluff') {
+      setVoteToasts([])
+      seenVotesRef.current = {}
+    }
+  }, [gameState?.phase])
 
   // Debug output
   console.log('Render state:', {
@@ -702,10 +777,12 @@ export default function RoomPage({ params }: { params: Promise<{ roomId: string 
           <BluffVoting
             players={gameState.players}
             myPlayerId={myGamePlayerId}
+            currentTurnPlayerId={gameState.currentTurnPlayerId}
             previousClaimerId={gameState.previousClaimerId}
             votes={gameState.bluffVotes || {}}
+            voteToasts={voteToasts}
             onVote={handleVote}
-            disabled={isLoading}
+            canVote={!isLoading}
           />
         )}
 

@@ -179,6 +179,14 @@ export default function ActionPanel({
 
   // Need to respond to previous claim
   if (phase === 'awaiting_response') {
+    // Show dice animation if rolling (after clicking Roll to Beat)
+    if (isRolling) {
+      return (
+        <div className="pb-3 border-b border-gray-800 mb-3">
+          {diceDisplayJSX}
+        </div>
+      )
+    }
     return (
       <div className="space-y-3 pb-3 border-b border-gray-800 mb-3">
         {playerBubblesJSX}
