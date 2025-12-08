@@ -101,51 +101,53 @@ export default function JoinRoomModal({ isOpen, onClose, initialCode = '' }: Joi
 
         <h2 className="text-2xl font-bold text-white mb-6">Join a Room</h2>
 
-        {/* Nickname Input */}
-        <div className="mb-4">
-          <label className="block text-sm font-medium text-gray-300 mb-2">
-            Your Name
-          </label>
-          <input
-            type="text"
-            value={nickname}
-            onChange={(e) => setNickname(e.target.value)}
-            placeholder="Enter your name"
-            maxLength={20}
-            className="w-full px-4 py-3 bg-panel-bg border border-gray-600 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-brand-blue focus:ring-1 focus:ring-brand-blue"
-            autoFocus={!initialCode}
-          />
-        </div>
+        <form onSubmit={(e) => { e.preventDefault(); handleJoin(); }}>
+          {/* Nickname Input */}
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-300 mb-2">
+              Your Name
+            </label>
+            <input
+              type="text"
+              value={nickname}
+              onChange={(e) => setNickname(e.target.value)}
+              placeholder="Enter your name"
+              maxLength={20}
+              className="w-full px-4 py-3 bg-panel-bg border border-gray-600 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-brand-blue focus:ring-1 focus:ring-brand-blue"
+              autoFocus={!initialCode}
+            />
+          </div>
 
-        {/* Room Code Input */}
-        <div className="mb-6">
-          <label className="block text-sm font-medium text-gray-300 mb-2">
-            Room Code
-          </label>
-          <input
-            type="text"
-            value={roomCode}
-            onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
-            placeholder="Enter 6-letter code"
-            maxLength={6}
-            className="w-full px-4 py-3 bg-panel-bg border border-gray-600 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-brand-blue focus:ring-1 focus:ring-brand-blue uppercase tracking-widest text-center text-xl font-mono"
-            autoFocus={!!initialCode}
-          />
-        </div>
+          {/* Room Code Input */}
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-gray-300 mb-2">
+              Room Code
+            </label>
+            <input
+              type="text"
+              value={roomCode}
+              onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
+              placeholder="e.g. BANANA"
+              maxLength={12}
+              className="w-full px-4 py-3 bg-panel-bg border border-gray-600 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-brand-blue focus:ring-1 focus:ring-brand-blue uppercase tracking-widest text-center text-xl font-mono"
+              autoFocus={!!initialCode}
+            />
+          </div>
 
-        {/* Error */}
-        {error && (
-          <p className="text-bluff-red text-sm mb-4">{error}</p>
-        )}
+          {/* Error */}
+          {error && (
+            <p className="text-bluff-red text-sm mb-4">{error}</p>
+          )}
 
-        {/* Join Button */}
-        <button
-          onClick={handleJoin}
-          disabled={isLoading}
-          className="w-full btn-primary text-lg"
-        >
-          {isLoading ? 'Joining...' : 'Join Room'}
-        </button>
+          {/* Join Button */}
+          <button
+            type="submit"
+            disabled={isLoading}
+            className="w-full btn-primary text-lg"
+          >
+            {isLoading ? 'Joining...' : 'Join Room'}
+          </button>
+        </form>
       </div>
     </div>
   )

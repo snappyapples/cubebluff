@@ -91,60 +91,63 @@ export default function CreateRoomModal({ isOpen, onClose }: CreateRoomModalProp
 
         <h2 className="text-2xl font-bold text-white mb-6">Create a Room</h2>
 
-        {/* Nickname Input */}
-        <div className="mb-6">
-          <label className="block text-sm font-medium text-gray-300 mb-2">
-            Your Name
-          </label>
-          <input
-            type="text"
-            value={nickname}
-            onChange={(e) => setNickname(e.target.value)}
-            placeholder="Enter your name"
-            maxLength={20}
-            className="w-full px-4 py-3 bg-panel-bg border border-gray-600 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-brand-blue focus:ring-1 focus:ring-brand-blue"
-            autoFocus
-          />
-        </div>
-
-        {/* Token Selection */}
-        <div className="mb-6">
-          <label className="block text-sm font-medium text-gray-300 mb-2">
-            Starting Tokens
-          </label>
-          <div className="flex gap-2">
-            {tokenOptions.map((t) => (
-              <button
-                key={t}
-                onClick={() => setTokens(t)}
-                className={`flex-1 py-3 rounded-xl font-semibold transition-all ${
-                  tokens === t
-                    ? 'bg-brand-blue text-white'
-                    : 'bg-panel-bg text-gray-300 hover:bg-card-bg'
-                }`}
-              >
-                {t}
-              </button>
-            ))}
+        <form onSubmit={(e) => { e.preventDefault(); handleCreate(); }}>
+          {/* Nickname Input */}
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-gray-300 mb-2">
+              Your Name
+            </label>
+            <input
+              type="text"
+              value={nickname}
+              onChange={(e) => setNickname(e.target.value)}
+              placeholder="Enter your name"
+              maxLength={20}
+              className="w-full px-4 py-3 bg-panel-bg border border-gray-600 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-brand-blue focus:ring-1 focus:ring-brand-blue"
+              autoFocus
+            />
           </div>
-          <p className="text-xs text-gray-500 mt-2">
-            Players are eliminated when they lose all tokens
-          </p>
-        </div>
 
-        {/* Error */}
-        {error && (
-          <p className="text-bluff-red text-sm mb-4">{error}</p>
-        )}
+          {/* Token Selection */}
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-gray-300 mb-2">
+              Starting Tokens
+            </label>
+            <div className="flex gap-2">
+              {tokenOptions.map((t) => (
+                <button
+                  key={t}
+                  type="button"
+                  onClick={() => setTokens(t)}
+                  className={`flex-1 py-3 rounded-xl font-semibold transition-all ${
+                    tokens === t
+                      ? 'bg-brand-blue text-white'
+                      : 'bg-panel-bg text-gray-300 hover:bg-card-bg'
+                  }`}
+                >
+                  {t}
+                </button>
+              ))}
+            </div>
+            <p className="text-xs text-gray-500 mt-2">
+              Players are eliminated when they lose all tokens
+            </p>
+          </div>
 
-        {/* Create Button */}
-        <button
-          onClick={handleCreate}
-          disabled={isLoading}
-          className="w-full btn-primary text-lg"
-        >
-          {isLoading ? 'Creating...' : 'Create Room'}
-        </button>
+          {/* Error */}
+          {error && (
+            <p className="text-bluff-red text-sm mb-4">{error}</p>
+          )}
+
+          {/* Create Button */}
+          <button
+            type="submit"
+            disabled={isLoading}
+            className="w-full btn-primary text-lg"
+          >
+            {isLoading ? 'Creating...' : 'Create Room'}
+          </button>
+        </form>
       </div>
     </div>
   )

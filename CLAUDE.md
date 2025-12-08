@@ -48,7 +48,7 @@ User Action → API Route → Server Game Logic → New State → Supabase → P
 - `checkAutoTransitions()` - Handle timed phase transitions
 
 **Game Store** (`lib/gameStore.ts`):
-- `createRoom()` - Create room with 6-char code, initialize host
+- `createRoom()` - Create room with fun word code (e.g., "BANANA"), initialize host
 - `joinRoom()` - Add player (checks duplicate names, max 8 players)
 - `getRoom()` - Fetch room state and player mapping
 - `startGame()` - Initialize game (host only, min 2 players)
@@ -98,6 +98,7 @@ User Action → API Route → Server Game Logic → New State → Supabase → P
 - `POST /api/rooms/[roomId]/bluff` - Call bluff (uses `gameState.currentRoll`)
 - `POST /api/rooms/[roomId]/roll-to-beat` - Roll to beat claim
 - `POST /api/rooms/[roomId]/twenty-one` - Handle 21 choice
+- `POST /api/rooms/[roomId]/vote` - Submit bluff/truth vote (crowd feature)
 - `POST /api/rooms/[roomId]/restart` - Restart game in same room
 
 **Client Synchronization** (`app/room/[roomId]/page.tsx`):
@@ -123,7 +124,7 @@ type GamePhase =
 ```
 
 **Auto-Transition Delays** (`lib/gameLogic.ts`):
-- `RESOLUTION_DELAY = 4000` - Show bluff result
+- `RESOLUTION_DELAY = 6000` - Show bluff result
 - `ROUND_END_DELAY = 2000` - Pause between rounds
 - `ELIMINATION_DELAY = 3000` - Show elimination message
 
@@ -229,6 +230,7 @@ interface Resolution {
   actualRoll: Roll
   claim: Roll
   claimerId: string    // Who made the claim that was challenged
+  callerId?: string    // Who called the bluff (undefined for pass_21)
   loserId: string
   tokensLost: number
 }
@@ -261,6 +263,30 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 **Vercel Deployment:** These same environment variables must be configured in Vercel project settings (Settings → Environment Variables) since `.env.local` is gitignored.
 
 Database uses `cb_rooms` table (see `supabase/schema.sql`).
+
+### Room Codes (`lib/roomWords.ts`)
+
+Room codes use fun, memorable words instead of random alphanumeric strings:
+- Curated list of ~350 words (animals, food, nature, objects, etc.)
+- All 4-8 letters, family-friendly, easy to spell
+- Collision checking against active rooms in batches
+- Falls back to random alphanumeric if all words taken
+
+### Crowd Voting (`components/BluffVoting.tsx`)
+
+Non-participating players can vote on whether a claim is bluff or truth:
+- Available during `awaiting_response` and `awaiting_21_choice` phases
+- Claimer and current turn player cannot vote
+- Votes stored with timestamps for reliable cross-player toast detection
+- Toast notifications appear when other players vote
+
+### Room Rejoin
+
+Players can rejoin rooms after disconnection:
+- Room membership stored in localStorage (`room_${roomId}_joined`, `room_${roomId}_nickname`)
+- Auto-rejoin attempts on page load via `autoRejoinAttemptedRef`
+- "Rejoin Game" button on home page when `activeRoomId` is set
+- Join API allows nickname-matching rejoin even after game starts
 
 ## Key Implementation Details
 
