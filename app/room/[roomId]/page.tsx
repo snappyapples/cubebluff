@@ -861,6 +861,22 @@ export default function RoomPage({ params }: { params: Promise<{ roomId: string 
             {error}
           </div>
         )}
+
+        {/* Room Code - at bottom of scrollable content */}
+        {gameState.phase !== 'finished' && (
+          <div className="mt-8 py-4 text-center">
+            <div className="flex items-center justify-center gap-3">
+              <span className="text-xs text-gray-500">Room:</span>
+              <span className="text-sm font-mono font-bold text-brand-blue">{roomId.toUpperCase()}</span>
+              <button
+                onClick={() => handleShare()}
+                className="text-xs text-gray-400 hover:text-white transition-colors px-2 py-1 rounded bg-gray-800 hover:bg-gray-700"
+              >
+                {copied ? 'Copied!' : 'Copy Link'}
+              </button>
+            </div>
+          </div>
+        )}
       </main>
 
       {/* Modals / Overlays */}
@@ -892,24 +908,6 @@ export default function RoomPage({ params }: { params: Promise<{ roomId: string 
         onPlayAgain={handlePlayAgain}
         isOpen={gameState.phase === 'finished'}
       />
-
-      {/* Room Code Footer - shown during active gameplay */}
-      {gameState.phase !== 'finished' && (
-        <div className="fixed bottom-0 left-0 right-0 bg-gray-900/90 backdrop-blur-sm border-t border-gray-800 py-2 px-4 safe-bottom z-30">
-          <div className="flex items-center justify-center gap-3">
-            <span className="text-xs text-gray-500">Room:</span>
-            <span className="text-sm font-mono font-bold text-brand-blue">{roomId.toUpperCase()}</span>
-            <button
-              onClick={() => {
-                handleShare()
-              }}
-              className="text-xs text-gray-400 hover:text-white transition-colors px-2 py-1 rounded bg-gray-800 hover:bg-gray-700"
-            >
-              {copied ? 'Copied!' : 'Copy Link'}
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   )
 }
