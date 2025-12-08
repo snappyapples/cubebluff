@@ -813,7 +813,7 @@ export default function RoomPage({ params }: { params: Promise<{ roomId: string 
         </div>
 
         {/* Action Panel - Status + buttons at top */}
-        <div className="flex-shrink-0">
+        <div className="flex-shrink-0 glow-box mb-4">
           <ActionPanel
             phase={gameState.phase}
             isMyTurn={isMyTurn && !myPlayer?.isEliminated}
@@ -847,16 +847,18 @@ export default function RoomPage({ params }: { params: Promise<{ roomId: string 
 
         {/* Claim List - Always visible, scrollable */}
         {/* Hide myRoll until animation finishes to preserve suspense, but allow claiming after hot reload */}
-        <ClaimList
-          currentClaim={gameState.currentClaim}
-          previousClaimerName={previousClaimer?.name}
-          myRoll={showRollResult ? myRoll : null}
-          minimumClaim={gameState.minimumClaim}
-          canSelectClaim={isMyTurn && gameState.phase === 'awaiting_claim' && !myPlayer?.isEliminated && (showRollResult || !isRolling)}
-          onClaim={handleClaim}
-          isLoading={isLoading}
-          claimHistory={gameState.claimHistory || []}
-        />
+        <div className="flex-1 overflow-hidden glow-box-subtle">
+          <ClaimList
+            currentClaim={gameState.currentClaim}
+            previousClaimerName={previousClaimer?.name}
+            myRoll={showRollResult ? myRoll : null}
+            minimumClaim={gameState.minimumClaim}
+            canSelectClaim={isMyTurn && gameState.phase === 'awaiting_claim' && !myPlayer?.isEliminated && (showRollResult || !isRolling)}
+            onClaim={handleClaim}
+            isLoading={isLoading}
+            claimHistory={gameState.claimHistory || []}
+          />
+        </div>
 
         {/* Error Display */}
         {error && (
