@@ -48,7 +48,7 @@ export default function RoomPage({ params }: { params: Promise<{ roomId: string 
     timestamp: number
   }
   const [voteToasts, setVoteToasts] = useState<VoteToast[]>([])
-  const seenVotesRef = useRef<{ [key: string]: string }>({}) // playerId -> "vote:timestamp"
+  const seenVotesRef = useRef<{ [key: string]: number }>({}) // playerId -> timestamp
 
   // Join form state
   const [nickname, setNickname] = useState('')
@@ -561,19 +561,22 @@ export default function RoomPage({ params }: { params: Promise<{ roomId: string 
     const votes = gameState.bluffVotes
     const now = Date.now()
 
-    Object.entries(votes).forEach(([voterId, vote]) => {
+    Object.entries(votes).forEach(([voterId, voteData]) => {
       // Skip our own votes (we show them immediately)
       if (voterId === myGamePlayerId) return
 
-      // Check if this is a new vote we haven't seen
-      const seenKey = seenVotesRef.current[voterId]
-      const currentKey = `${vote}:recent`
+      // Handle both old format (string) and new format (object with timestamp)
+      const vote = typeof voteData === 'object' ? voteData.vote : voteData
+      const voteTimestamp = typeof voteData === 'object' ? voteData.timestamp : 0
 
-      if (seenKey !== currentKey) {
+      // Check if this is a new vote we haven't seen (by timestamp)
+      const seenTimestamp = seenVotesRef.current[voterId] || 0
+
+      if (voteTimestamp > seenTimestamp) {
         // New vote! Show toast
         const voter = gameState.players.find(p => p.id === voterId)
         if (voter) {
-          const toastId = `${voterId}-${now}`
+          const toastId = `${voterId}-${voteTimestamp}`
           const newToast: VoteToast = {
             id: toastId,
             playerName: voter.name,
@@ -587,7 +590,7 @@ export default function RoomPage({ params }: { params: Promise<{ roomId: string 
             setVoteToasts(prev => prev.filter(t => t.id !== toastId))
           }, 3000)
         }
-        seenVotesRef.current[voterId] = currentKey
+        seenVotesRef.current[voterId] = voteTimestamp
       }
     })
   }, [gameState?.bluffVotes, gameState?.players, myGamePlayerId])

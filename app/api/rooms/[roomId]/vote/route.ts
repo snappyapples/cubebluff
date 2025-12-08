@@ -55,12 +55,12 @@ export async function POST(
       )
     }
 
-    // Update votes
+    // Update votes - include timestamp for change detection
     const newVotes = { ...(gameState.bluffVotes || {}) }
     if (vote === null) {
       delete newVotes[gamePlayerId]
     } else {
-      newVotes[gamePlayerId] = vote
+      newVotes[gamePlayerId] = { vote, timestamp: Date.now() }
     }
 
     const newState = { ...gameState, bluffVotes: newVotes }

@@ -38,47 +38,44 @@ export default function BluffVoting({
 
   return (
     <>
-      {/* Fixed corner buttons - only for eligible voters */}
+      {/* Inline voting buttons - same style as action panel */}
       {isEligible && (
-        <>
-          {/* Label centered above buttons */}
-          <div className="fixed bottom-28 left-0 right-0 z-40 text-center pointer-events-none">
-            <span className="text-xs text-gray-400">{claimer?.name || 'Their'} claim?</span>
+        <div className="mb-3">
+          <p className="text-center text-xs text-gray-400 mb-2">{claimer?.name}'s claim?</p>
+          <div className="grid grid-cols-2 gap-3">
+            <button
+              onClick={() => onVote('truth')}
+              className="py-2.5 rounded-xl font-semibold text-sm bg-truth-green/20 text-truth-green border border-truth-green/50 hover:bg-truth-green/30 active:scale-95 transition-all"
+            >
+              TRUTH
+            </button>
+            <button
+              onClick={() => onVote('bluff')}
+              className="py-2.5 rounded-xl font-semibold text-sm bg-bluff-red/20 text-bluff-red border border-bluff-red/50 hover:bg-bluff-red/30 active:scale-95 transition-all"
+            >
+              BLUFF
+            </button>
           </div>
-
-          {/* Bottom left - Truth button */}
-          <button
-            onClick={() => onVote('truth')}
-            className="fixed bottom-20 left-4 z-40 px-4 py-2 rounded-full text-sm font-bold bg-truth-green/80 text-white shadow-lg hover:bg-truth-green active:scale-95 transition-all"
-          >
-            TRUTH
-          </button>
-
-          {/* Bottom right - Bluff button */}
-          <button
-            onClick={() => onVote('bluff')}
-            className="fixed bottom-20 right-4 z-40 px-4 py-2 rounded-full text-sm font-bold bg-bluff-red/80 text-white shadow-lg hover:bg-bluff-red active:scale-95 transition-all"
-          >
-            BLUFF
-          </button>
-        </>
+        </div>
       )}
 
-      {/* Toast notifications - centered overlay */}
-      <div className="fixed bottom-36 left-0 right-0 pointer-events-none z-50 flex flex-col items-center gap-2 px-4">
-        {voteToasts.map((toast) => (
-          <div
-            key={toast.id}
-            className={`px-5 py-2.5 rounded-full text-base font-semibold shadow-xl animate-fade-in-up ${
-              toast.vote === 'bluff'
-                ? 'bg-bluff-red text-white'
-                : 'bg-truth-green text-white'
-            }`}
-          >
-            {toast.playerName} thinks {toast.vote === 'bluff' ? 'BLUFF' : 'TRUTH'}
-          </div>
-        ))}
-      </div>
+      {/* Toast notifications - fixed centered overlay */}
+      {voteToasts.length > 0 && (
+        <div className="fixed top-1/2 left-0 right-0 -translate-y-1/2 pointer-events-none z-50 flex flex-col items-center gap-2 px-4">
+          {voteToasts.map((toast) => (
+            <div
+              key={toast.id}
+              className={`px-6 py-3 rounded-xl text-lg font-bold shadow-2xl animate-fade-in-up ${
+                toast.vote === 'bluff'
+                  ? 'bg-bluff-red text-white'
+                  : 'bg-truth-green text-white'
+              }`}
+            >
+              {toast.playerName} thinks {toast.vote === 'bluff' ? 'BLUFF' : 'TRUTH'}
+            </div>
+          ))}
+        </div>
+      )}
     </>
   )
 }
