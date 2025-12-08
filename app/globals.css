@@ -101,13 +101,46 @@ body.in-game {
   @apply disabled:opacity-50 disabled:cursor-not-allowed;
 }
 
-/* Card/Panel styling */
+/* Card/Panel styling with gradients */
 .game-panel {
-  @apply bg-panel-bg rounded-2xl p-4 shadow-lg;
+  @apply rounded-2xl p-4;
+  background: linear-gradient(145deg, #374151 0%, #1f2937 100%);
+  border: 1px solid rgba(75, 85, 99, 0.3);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
 }
 
 .game-card {
-  @apply bg-card-bg rounded-xl p-3;
+  @apply rounded-xl p-3;
+  background: linear-gradient(145deg, #4b5563 0%, #374151 100%);
+  border: 1px solid rgba(75, 85, 99, 0.2);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* Player bubble styling */
+.player-bubble {
+  @apply flex items-center gap-2 px-3 py-1.5 rounded-full transition-all text-sm;
+  background: linear-gradient(145deg, #374151 0%, #1f2937 100%);
+  border: 1px solid rgba(75, 85, 99, 0.3);
+}
+
+.player-bubble.active {
+  @apply ring-2 ring-brand-blue;
+  background: linear-gradient(145deg, rgba(59, 130, 246, 0.25) 0%, rgba(59, 130, 246, 0.1) 100%);
+  border-color: rgba(59, 130, 246, 0.4);
+}
+
+/* Enhanced modal backdrop */
+.modal-backdrop {
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.8) 0%, rgba(0, 0, 0, 0.9) 100%);
+  backdrop-filter: blur(4px);
+}
+
+/* Elevated card style for important elements */
+.card-elevated {
+  @apply rounded-xl p-4;
+  background: linear-gradient(145deg, #4b5563 0%, #374151 100%);
+  border: 1px solid rgba(75, 85, 99, 0.3);
+  box-shadow: 0 8px 16px -4px rgba(0, 0, 0, 0.4), 0 4px 8px -2px rgba(0, 0, 0, 0.3);
 }
 
 /* Glow effects */

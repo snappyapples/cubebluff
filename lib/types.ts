@@ -66,6 +66,7 @@ export interface Resolution {
   actualRoll: Roll
   claim: Roll
   claimerId: string    // Who made the claim that was challenged
+  callerId?: string    // Who called the bluff (undefined for pass_21)
   loserId: string
   tokensLost: number
 }
@@ -102,6 +103,9 @@ export interface GameState {
 
   // Resolution
   lastResolution: Resolution | null
+
+  // Crowd voting - players guess if current claim is bluff or truth
+  bluffVotes?: { [playerId: string]: 'bluff' | 'truth' }
 
   // Timestamps for auto-transitions (milliseconds since epoch)
   resolutionAt?: number         // When bluff was resolved (show for 4 seconds)

@@ -44,7 +44,7 @@ export function initGame(
   return {
     phase: 'round_start',
     round: 1,
-    currentTurnPlayerId: turnOrder[0],
+    currentTurnPlayerId: turnOrder[Math.floor(Math.random() * turnOrder.length)],
     turnOrder,
     players,
     currentRoll: null,
@@ -183,6 +183,7 @@ export function callBluff(
     actualRoll,
     claim,
     claimerId: state.previousClaimerId!,
+    callerId,
     loserId,
     tokensLost,
   }
@@ -341,9 +342,20 @@ export function startNewRound(state: GameState): GameState {
     }
   }
 
-  // Find next starting player (after the one who lost the previous round)
+  // Find next starting player
+  // If a bluff was called, the caller starts the next round
   let nextStarterId: string
-  if (state.lastResolution) {
+  if (state.lastResolution?.callerId) {
+    // Bluff was called - caller starts next round
+    const callerIsActive = activePlayers.some(p => p.id === state.lastResolution!.callerId)
+    if (callerIsActive) {
+      nextStarterId = state.lastResolution.callerId
+    } else {
+      // Caller was eliminated, use next active player after caller
+      nextStarterId = getNextActivePlayer(state, state.lastResolution.callerId)
+    }
+  } else if (state.lastResolution) {
+    // pass_21 type - use next active player after loser
     nextStarterId = getNextActivePlayer(state, state.lastResolution.loserId)
   } else {
     // First round or no resolution - use first active player
@@ -363,6 +375,7 @@ export function startNewRound(state: GameState): GameState {
     isDoubleStakes: false,
     pendingTwentyOneChoice: false,
     lastResolution: null,
+    bluffVotes: {}, // Clear votes for new round
     roundEndAt: Date.now(),
   }
 }
@@ -382,7 +395,7 @@ export function beginRound(state: GameState): GameState {
 // Auto-Transitions (called on polling)
 // ============================================================================
 
-const RESOLUTION_DELAY = 4000 // Show bluff resolution for 4 seconds
+const RESOLUTION_DELAY = 6000 // Show bluff resolution for 6 seconds
 const ROUND_END_DELAY = 2000 // Pause between rounds for 2 seconds
 const ELIMINATION_DELAY = 3000 // Show elimination for 3 seconds
 

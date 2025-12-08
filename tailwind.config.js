@@ -31,6 +31,20 @@ module.exports = {
         'game-bg': '#1f2937',
         'panel-bg': '#374151',
         'card-bg': '#4b5563',
+
+        // Gradient endpoints
+        'panel-dark': '#1f2937',
+        'panel-light': '#374151',
+        'card-dark': '#374151',
+        'card-light': '#4b5563',
+      },
+      boxShadow: {
+        'card': '0 2px 4px rgba(0, 0, 0, 0.2)',
+        'card-elevated': '0 8px 16px -4px rgba(0, 0, 0, 0.4), 0 4px 8px -2px rgba(0, 0, 0, 0.3)',
+        'panel': '0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2)',
+        'glow-blue': '0 0 20px rgba(59, 130, 246, 0.5)',
+        'glow-gold': '0 0 20px rgba(251, 191, 36, 0.5)',
+        'glow-red': '0 0 20px rgba(220, 38, 38, 0.5)',
       },
       fontFamily: {
         'display': ['Poppins', 'sans-serif'],

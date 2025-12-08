@@ -82,7 +82,7 @@ export default function ClaimList({
                     : isCurrentClaim
                       ? 'bg-bluff-red/40 border-2 border-bluff-red text-white'
                       : wasClaimed
-                        ? 'bg-gray-600 text-white'
+                        ? 'bg-gray-800/50 text-gray-300'
                         : isBelowMinimum
                           ? 'bg-gray-900/30 text-gray-600'
                           : 'bg-gray-700 text-white'

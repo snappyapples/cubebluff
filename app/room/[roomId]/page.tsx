@@ -9,7 +9,9 @@ import TwentyOneModal from '@/components/TwentyOneModal'
 import BluffResolution from '@/components/BluffResolution'
 import GameOverScreen from '@/components/GameOverScreen'
 import RulesModal from '@/components/RulesModal'
-import { GameState, Roll, Player } from '@/lib/types'
+import ClaimAnnouncement from '@/components/ClaimAnnouncement'
+import BluffVoting from '@/components/BluffVoting'
+import { GameState, Roll, Player, Resolution } from '@/lib/types'
 
 const POLL_INTERVAL = 2000 // 2 seconds
 
@@ -33,6 +35,10 @@ export default function RoomPage({ params }: { params: Promise<{ roomId: string 
   const [settings, setSettings] = useState({ startingTokens: 5 })
   const [showRules, setShowRules] = useState(false)
   const [copied, setCopied] = useState(false)
+  const [cachedResolution, setCachedResolution] = useState<Resolution | null>(null)
+  const rollInProgressRef = useRef(false) // Debounce protection for rolls
+  const [lastSeenClaim, setLastSeenClaim] = useState<string | null>(null)
+  const [showClaimAnnouncement, setShowClaimAnnouncement] = useState(false)
 
   // Join form state
   const [nickname, setNickname] = useState('')
@@ -95,16 +101,53 @@ export default function RoomPage({ params }: { params: Promise<{ roomId: string 
 
   // Initial load and polling
   useEffect(() => {
-    // Load saved nickname
-    const savedNickname = localStorage.getItem('nickname')
-    if (savedNickname) {
-      setNickname(savedNickname)
+    // Check for room-specific stored nickname first (for robust rejoin)
+    const roomNickname = localStorage.getItem(`room_${roomId}_nickname`)
+    const globalNickname = localStorage.getItem('nickname')
+
+    // Prefer room-specific nickname for this room, fall back to global
+    if (roomNickname) {
+      setNickname(roomNickname)
+      // Also update global nickname to match
+      localStorage.setItem('nickname', roomNickname)
+    } else if (globalNickname) {
+      setNickname(globalNickname)
     }
 
     fetchState()
     const interval = setInterval(fetchState, POLL_INTERVAL)
     return () => clearInterval(interval)
-  }, [fetchState])
+  }, [fetchState, roomId])
+
+  // Cache resolution to prevent null issues during state transitions
+  useEffect(() => {
+    if (gameState?.lastResolution) {
+      setCachedResolution(gameState.lastResolution)
+    }
+  }, [gameState?.lastResolution])
+
+  // Clear cached resolution when phase leaves resolution display
+  useEffect(() => {
+    if (gameState?.phase !== 'resolving_bluff' && gameState?.phase !== 'player_eliminated') {
+      // Delay clearing so animation can complete
+      const timer = setTimeout(() => setCachedResolution(null), 500)
+      return () => clearTimeout(timer)
+    }
+  }, [gameState?.phase])
+
+  // Detect new claims for announcement popup
+  useEffect(() => {
+    if (gameState?.currentClaim && gameState.phase === 'awaiting_response') {
+      const claimKey = `${gameState.currentClaim.display}-${gameState.previousClaimerId}`
+      if (claimKey !== lastSeenClaim) {
+        setLastSeenClaim(claimKey)
+        setShowClaimAnnouncement(true)
+      }
+    } else if (!gameState?.currentClaim) {
+      setLastSeenClaim(null)
+      setShowClaimAnnouncement(false)
+    }
+  }, [gameState?.currentClaim?.display, gameState?.previousClaimerId, gameState?.phase])
 
   // Handle join
   const handleJoin = async () => {
@@ -136,6 +179,9 @@ export default function RoomPage({ params }: { params: Promise<{ roomId: string 
       const data = await response.json()
 
       if (data.success) {
+        // Store room membership for robust rejoin
+        localStorage.setItem(`room_${roomId}_joined`, 'true')
+        localStorage.setItem(`room_${roomId}_nickname`, nickname.trim())
         setNeedsToJoin(false)
         fetchState()
       } else {
@@ -177,6 +223,9 @@ export default function RoomPage({ params }: { params: Promise<{ roomId: string 
 
   // Handle roll
   const handleRoll = async () => {
+    // Debounce protection - prevent double-clicks during animation
+    if (rollInProgressRef.current) return
+    rollInProgressRef.current = true
     setIsLoading(true)
 
     try {
@@ -206,14 +255,17 @@ export default function RoomPage({ params }: { params: Promise<{ roomId: string 
           setShowRollResult(true)
           setIsRolling(false)
           isRollingRef.current = false // Resume polling
+          rollInProgressRef.current = false // Release debounce lock
           setGameState(data.gameState)
           setPendingGameState(null)
         }, ROLL_DURATION + 100)
       } else {
         setError(data.error || 'Failed to roll')
+        rollInProgressRef.current = false // Release debounce lock on error
       }
     } catch (err) {
       setError('Failed to roll')
+      rollInProgressRef.current = false // Release debounce lock on error
     } finally {
       setIsLoading(false)
     }
@@ -251,6 +303,9 @@ export default function RoomPage({ params }: { params: Promise<{ roomId: string 
 
   // Handle roll to beat
   const handleRollToBeat = async () => {
+    // Debounce protection - prevent double-clicks during animation
+    if (rollInProgressRef.current) return
+    rollInProgressRef.current = true
     setIsLoading(true)
 
     try {
@@ -280,14 +335,17 @@ export default function RoomPage({ params }: { params: Promise<{ roomId: string 
           setShowRollResult(true)
           setIsRolling(false)
           isRollingRef.current = false // Resume polling
+          rollInProgressRef.current = false // Release debounce lock
           setGameState(data.gameState)
           setPendingGameState(null)
         }, ROLL_DURATION + 100)
       } else {
         setError(data.error || 'Failed to roll')
+        rollInProgressRef.current = false // Release debounce lock on error
       }
     } catch (err) {
       setError('Failed to roll')
+      rollInProgressRef.current = false // Release debounce lock on error
     } finally {
       setIsLoading(false)
     }
@@ -391,6 +449,23 @@ export default function RoomPage({ params }: { params: Promise<{ roomId: string 
     await navigator.clipboard.writeText(url)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
+  }
+
+  // Handle bluff vote
+  const handleVote = async (vote: 'bluff' | 'truth' | null) => {
+    const currentPlayerId = localStorage.getItem('playerId')
+    if (!currentPlayerId) return
+
+    try {
+      await fetch(`/api/rooms/${roomId}/vote`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ playerId: currentPlayerId, vote }),
+      })
+      // State will update via polling
+    } catch (err) {
+      console.error('Failed to submit vote:', err)
+    }
   }
 
   // Debug output
@@ -588,7 +663,7 @@ export default function RoomPage({ params }: { params: Promise<{ roomId: string 
       <Header onHowToPlay={() => setShowRules(true)} />
       {showRules && <RulesModal isOpen={showRules} onClose={() => setShowRules(false)} />}
 
-      <main className="flex-1 max-w-lg mx-auto w-full p-4 flex flex-col overflow-hidden">
+      <main className="flex-1 max-w-lg mx-auto w-full p-4 pb-16 flex flex-col overflow-hidden">
         {/* Compact Round Header */}
         <div className="flex items-center justify-between mb-2 flex-shrink-0">
           <div className="text-sm">
@@ -622,6 +697,17 @@ export default function RoomPage({ params }: { params: Promise<{ roomId: string 
           />
         </div>
 
+        {/* Bluff Voting - Show during awaiting_response or awaiting_21_choice */}
+        {(gameState.phase === 'awaiting_response' || gameState.phase === 'awaiting_21_choice') && gameState.currentClaim && (
+          <BluffVoting
+            players={gameState.players}
+            myPlayerId={myGamePlayerId}
+            previousClaimerId={gameState.previousClaimerId}
+            votes={gameState.bluffVotes || {}}
+            onVote={handleVote}
+            disabled={isLoading}
+          />
+        )}
 
         {/* Claim List - Always visible, scrollable */}
         {/* Hide myRoll until animation finishes to preserve suspense, but allow claiming after hot reload */}
@@ -653,12 +739,18 @@ export default function RoomPage({ params }: { params: Promise<{ roomId: string 
         isLoading={isLoading}
       />
 
+      <ClaimAnnouncement
+        claim={gameState.currentClaim}
+        claimerName={previousClaimer?.name}
+        isNewClaim={showClaimAnnouncement}
+      />
+
       <BluffResolution
-        resolution={gameState.lastResolution!}
+        resolution={(cachedResolution || gameState.lastResolution)!}
         players={gameState.players}
-        isOpen={gameState.phase === 'resolving_bluff' || gameState.phase === 'player_eliminated'}
+        isOpen={(gameState.phase === 'resolving_bluff' || gameState.phase === 'player_eliminated') && !!(cachedResolution || gameState.lastResolution)}
         myPlayerId={myGamePlayerId}
-        claimerId={gameState.lastResolution?.claimerId || null}
+        claimerId={cachedResolution?.claimerId || gameState.lastResolution?.claimerId || null}
       />
 
       <GameOverScreen
@@ -667,6 +759,24 @@ export default function RoomPage({ params }: { params: Promise<{ roomId: string 
         onPlayAgain={handlePlayAgain}
         isOpen={gameState.phase === 'finished'}
       />
+
+      {/* Room Code Footer - shown during active gameplay */}
+      {gameState.phase !== 'lobby' && gameState.phase !== 'finished' && (
+        <div className="fixed bottom-0 left-0 right-0 bg-gray-900/90 backdrop-blur-sm border-t border-gray-800 py-2 px-4 safe-bottom z-30">
+          <div className="flex items-center justify-center gap-3">
+            <span className="text-xs text-gray-500">Room:</span>
+            <span className="text-sm font-mono font-bold text-brand-blue">{roomId.toUpperCase()}</span>
+            <button
+              onClick={() => {
+                handleShare()
+              }}
+              className="text-xs text-gray-400 hover:text-white transition-colors px-2 py-1 rounded bg-gray-800 hover:bg-gray-700"
+            >
+              {copied ? 'Copied!' : 'Copy Link'}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

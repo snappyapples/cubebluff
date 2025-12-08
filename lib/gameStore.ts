@@ -107,15 +107,46 @@ class GameStore {
       return { success: false, error: 'Invalid room state' }
     }
 
-    // Check if game already started
-    if (gameState.phase !== 'lobby') {
-      return { success: false, error: 'Game has already started' }
+    // Check if player already in room (allow rejoin even if game started)
+    if (gameState._players[playerId]) {
+      // Player already joined - just return success (allows rejoin)
+      return { success: true }
     }
 
-    // Check if player already in room
-    if (gameState._players[playerId]) {
-      // Player already joined - just return success
+    // Check if player can rejoin by matching nickname (for robust rejoin)
+    const existingPlayerByName = gameState.players.find(
+      (p) => p.name.toLowerCase() === nickname.toLowerCase()
+    )
+    if (existingPlayerByName && gameState.phase !== 'lobby') {
+      // Allow rejoin with same nickname during active game
+      // Update the player mapping with the new playerId
+      const updatedState: GameStateWithPlayers = {
+        ...gameState,
+        _players: {
+          ...gameState._players,
+          [playerId]: {
+            nickname,
+            playerId: existingPlayerByName.id,
+          },
+        },
+      }
+
+      const { error: updateError } = await supabase
+        .from('cb_rooms')
+        .update({ game_state: updatedState })
+        .eq('code', roomCode.toUpperCase())
+
+      if (updateError) {
+        console.error('Error rejoining room:', updateError)
+        return { success: false, error: 'Failed to rejoin room' }
+      }
+
       return { success: true }
+    }
+
+    // Check if game already started (only block new players)
+    if (gameState.phase !== 'lobby') {
+      return { success: false, error: 'Game has already started' }
     }
 
     // Check for duplicate nickname (case-insensitive)
