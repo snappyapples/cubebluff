@@ -98,8 +98,8 @@ export default function ClaimList({
                   {roll.display}
                 </span>
 
-                {/* Labels below the number */}
-                <div className="flex flex-wrap justify-center gap-1 mt-1">
+                {/* Labels below the number - fixed height for consistent sizing */}
+                <div className="flex flex-wrap justify-center gap-1 mt-1 h-5">
                   {isMyRoll && (
                     <span className="text-[10px] bg-brand-blue/30 text-brand-blue-light px-1.5 py-0.5 rounded">YOU</span>
                   )}
