@@ -80,7 +80,7 @@ export default function ClaimList({
                   ${isSelected
                     ? 'bg-brand-blue text-white ring-2 ring-brand-blue ring-offset-2 ring-offset-gray-900'
                     : isCurrentClaim
-                      ? 'bg-bluff-red/40 border-2 border-bluff-red text-white'
+                      ? 'bg-brand-blue/40 border-2 border-brand-blue text-white'
                       : wasClaimed
                         ? 'bg-gray-800/50 text-gray-300'
                         : isBelowMinimum
@@ -109,7 +109,7 @@ export default function ClaimList({
                       key={`${entry.playerId}-${idx}`}
                       className={`text-[10px] font-medium px-1.5 py-0.5 rounded truncate max-w-[60px] ${
                         isCurrentClaim && idx === claimers.length - 1
-                          ? 'bg-bluff-red/50 text-white'
+                          ? 'bg-brand-blue/70 text-white'
                           : 'bg-gray-500 text-white'
                       }`}
                     >
