@@ -15,18 +15,15 @@ export default function BluffResolution({ resolution, players, isOpen, myPlayerI
   if (!isOpen || !resolution) return null
 
   const loser = players.find((p) => p.id === resolution.loserId)
-  const wasLying = resolution.type === 'bluff_success'
+  const claimer = players.find((p) => p.id === claimerId)
+  const wasBluffing = resolution.type === 'bluff_success'
 
-  // Check if I was the one bluffing (the claimer who got caught)
-  const iWasTheClaimer = claimerId === myPlayerId
-  // Check if I was the one who called the bluff
-  const iCalledTheBluff = !iWasTheClaimer && resolution.loserId !== myPlayerId && !wasLying ? false :
-                          !iWasTheClaimer && resolution.loserId === myPlayerId
+  // Get claimer name for display
+  const claimerName = claimerId === myPlayerId ? 'You' : claimer?.name || 'They'
+  const wasWere = claimerId === myPlayerId ? 'were' : 'was'
 
-  // Personalize the message
-  const blufferText = iWasTheClaimer ? "YOU WERE BLUFFING!" : "THEY WERE BLUFFING!"
-  const truthText = iWasTheClaimer ? "YOU WERE TELLING THE TRUTH!" : "THEY WERE TELLING THE TRUTH!"
-  const loserText = loser?.id === myPlayerId ? "You lose" : `${loser?.name} loses`
+  // Loser text for token loss
+  const loserText = loser?.id === myPlayerId ? 'You lose' : `${loser?.name} loses`
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -35,41 +32,14 @@ export default function BluffResolution({ resolution, players, isOpen, myPlayerI
 
       {/* Modal */}
       <div className="relative bg-game-bg rounded-2xl p-8 w-full max-w-md animate-slide-in shadow-2xl border border-gray-700">
-        {/* Header */}
-        <div className="text-center mb-6">
-          <h2 className="text-3xl font-bold text-bluff-red mb-2">
-            🚨 BLUFF CALLED! 🚨
-          </h2>
-        </div>
-
-        {/* Claim vs Actual */}
-        <div className="grid grid-cols-2 gap-4 mb-6">
-          <div className="text-center">
-            <p className="text-gray-400 text-sm mb-2">Claimed</p>
-            <div className="text-4xl font-bold text-brand-blue">
-              {resolution.claim.display}
-            </div>
-          </div>
-          <div className="text-center">
-            <p className="text-gray-400 text-sm mb-2">Actual Roll</p>
-            <div className="flex justify-center gap-2 mb-1">
-              <ThreeDDice value={resolution.actualRoll.die1} isRolling={false} size={50} />
-              <ThreeDDice value={resolution.actualRoll.die2} isRolling={false} size={50} />
-            </div>
-            <div className="text-2xl font-bold text-white">
-              {resolution.actualRoll.display}
-            </div>
-          </div>
-        </div>
-
-        {/* Result */}
-        <div className={`text-center p-4 rounded-xl ${
-          wasLying ? 'bg-bluff-red/20' : 'bg-truth-green/20'
+        {/* Main Result - Top and prominent */}
+        <div className={`text-center p-5 rounded-xl mb-6 ${
+          wasBluffing ? 'bg-bluff-red/20' : 'bg-truth-green/20'
         }`}>
-          {wasLying ? (
+          {wasBluffing ? (
             <>
-              <p className="text-2xl font-bold text-bluff-red mb-2">
-                ❌ {blufferText}
+              <p className="text-3xl font-bold text-bluff-red mb-2">
+                {claimerName} {wasWere} bluffing!
               </p>
               <p className="text-gray-300">
                 {loserText} {resolution.tokensLost} token{resolution.tokensLost > 1 ? 's' : ''}
@@ -77,8 +47,8 @@ export default function BluffResolution({ resolution, players, isOpen, myPlayerI
             </>
           ) : (
             <>
-              <p className="text-2xl font-bold text-truth-green mb-2">
-                ✓ {truthText}
+              <p className="text-3xl font-bold text-truth-green mb-2">
+                {claimerName} {wasWere} telling the truth!
               </p>
               <p className="text-gray-300">
                 {loserText} {resolution.tokensLost} token{resolution.tokensLost > 1 ? 's' : ''}
@@ -87,12 +57,32 @@ export default function BluffResolution({ resolution, players, isOpen, myPlayerI
           )}
         </div>
 
+        {/* Details: Claim vs Actual */}
+        <div className="grid grid-cols-2 gap-4 mb-4">
+          <div className="text-center">
+            <p className="text-gray-400 text-sm mb-2">Claimed</p>
+            <div className="text-3xl font-bold text-brand-blue">
+              {resolution.claim.display}
+            </div>
+          </div>
+          <div className="text-center">
+            <p className="text-gray-400 text-sm mb-2">Actual Roll</p>
+            <div className="flex justify-center gap-2 mb-1">
+              <ThreeDDice value={resolution.actualRoll.die1} isRolling={false} size={40} />
+              <ThreeDDice value={resolution.actualRoll.die2} isRolling={false} size={40} />
+            </div>
+            <div className="text-xl font-bold text-white">
+              {resolution.actualRoll.display}
+            </div>
+          </div>
+        </div>
+
         {/* Token Animation */}
         <div className="flex justify-center mt-4">
           {Array.from({ length: resolution.tokensLost }).map((_, i) => (
             <div
               key={i}
-              className="w-4 h-4 rounded-full bg-token-gold animate-token-fall"
+              className="w-4 h-4 rounded-full bg-token-gold animate-token-fall mx-0.5"
               style={{ animationDelay: `${i * 0.2}s` }}
             />
           ))}
