@@ -7,7 +7,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 Cube Bluff is an online multiplayer bluffing dice game built with Next.js 16, TypeScript, Tailwind CSS, and Supabase. Players roll dice secretly, make claims about their rolls, and try to catch each other bluffing.
 
 **Tech Stack:**
-- Next.js 16.0.3 (App Router with Turbopack)
+- Next.js 16.0.7 (App Router with Turbopack)
 - React 19.2.0
 - TypeScript 5.9.3
 - Tailwind CSS 3.4.18
@@ -257,6 +257,8 @@ Requires `.env.local` with Supabase credentials:
 NEXT_PUBLIC_SUPABASE_URL=your-project-url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 ```
+
+**Vercel Deployment:** These same environment variables must be configured in Vercel project settings (Settings → Environment Variables) since `.env.local` is gitignored.
 
 Database uses `cb_rooms` table (see `supabase/schema.sql`).
 
