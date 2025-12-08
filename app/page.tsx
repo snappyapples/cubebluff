@@ -71,7 +71,7 @@ function HomeContent() {
             Cube <span className="text-brand-blue">Bluff</span>
           </h1>
           <p className="text-gray-400 text-lg">
-            Roll. Claim. Bluff. Survive.
+            Outsmart. Outbluff. Outlast.
           </p>
         </div>
 
