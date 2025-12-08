@@ -304,23 +304,26 @@ export function handleTwentyOneChoice(
       }
     }
 
-    // Pass to next player - they now face the 21 choice
+    // Pass on 21 - start a fresh round with the next player
     const nextPlayerId = getNextActivePlayer({ ...state, players: updatedPlayers }, playerId)
 
-    // If we've gone all the way around to the claimer, they win by default (everyone passed)
-    if (nextPlayerId === state.previousClaimerId) {
-      return startNewRound({
-        ...state,
-        players: updatedPlayers,
-        pendingTwentyOneChoice: false,
-      })
-    }
-
+    // Manually start fresh round (don't use startNewRound as it calculates its own starter)
     return {
       ...state,
+      phase: 'round_start',
+      round: state.round + 1,
       players: updatedPlayers,
       currentTurnPlayerId: nextPlayerId,
-      // Keep phase as awaiting_21_choice - next player also must choose
+      currentRoll: null,
+      currentClaim: null,
+      previousClaimerId: null,
+      minimumClaim: null,
+      claimHistory: [],
+      isDoubleStakes: false,
+      pendingTwentyOneChoice: false,
+      lastResolution: null,
+      bluffVotes: {},
+      roundEndAt: Date.now(),
     }
   }
 }

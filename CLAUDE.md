@@ -77,8 +77,7 @@ User Action → API Route → Server Game Logic → New State → Supabase → P
 **Special 21 Rule:**
 - When a player CLAIMS 21 (whether true or bluff), the next player must choose:
   - "Accept Challenge" = double stakes (2 tokens at risk), then respond normally
-  - "Pass" = pay 1 token, choice passes to the next player
-- If everyone passes back to the claimer, they win the round by default
+  - "Pass" = pay 1 token, fresh round starts with the next player
 
 ### Multiplayer Architecture
 
