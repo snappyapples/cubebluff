@@ -109,6 +109,9 @@ export default function RoomPage({ params }: { params: Promise<{ roomId: string 
     }
   }, [roomId])
 
+  // Auto-rejoin ref to prevent multiple attempts
+  const autoRejoinAttemptedRef = useRef(false)
+
   // Initial load and polling
   useEffect(() => {
     // Check for room-specific stored nickname first (for robust rejoin)
@@ -129,6 +132,53 @@ export default function RoomPage({ params }: { params: Promise<{ roomId: string 
     return () => clearInterval(interval)
   }, [fetchState, roomId])
 
+  // Auto-rejoin when user has stored membership but isn't recognized
+  useEffect(() => {
+    const attemptAutoRejoin = async () => {
+      // Only attempt once per page load
+      if (autoRejoinAttemptedRef.current) return
+
+      // Check if we should auto-rejoin
+      const wasInRoom = localStorage.getItem(`room_${roomId}_joined`)
+      const storedNickname = localStorage.getItem(`room_${roomId}_nickname`) || localStorage.getItem('nickname')
+
+      // If user was previously in this room and has a nickname, but needs to join
+      if (wasInRoom && storedNickname && needsToJoin && gameState?.phase !== 'lobby') {
+        autoRejoinAttemptedRef.current = true
+
+        // Silently attempt to rejoin
+        let currentPlayerId = localStorage.getItem('playerId')
+        if (!currentPlayerId) {
+          currentPlayerId = crypto.randomUUID()
+          localStorage.setItem('playerId', currentPlayerId)
+        }
+
+        try {
+          const response = await fetch(`/api/rooms/${roomId}/join`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              playerId: currentPlayerId,
+              nickname: storedNickname.trim(),
+            }),
+          })
+
+          const data = await response.json()
+          if (data.success) {
+            setJoinError('')
+            setNeedsToJoin(false)
+            fetchState()
+          }
+          // If rejoin fails, user will see the join form with error message
+        } catch (err) {
+          console.error('Auto-rejoin failed:', err)
+        }
+      }
+    }
+
+    attemptAutoRejoin()
+  }, [needsToJoin, gameState?.phase, roomId, fetchState])
+
   // Cache resolution to prevent null issues during state transitions
   useEffect(() => {
     if (gameState?.lastResolution) {
@@ -142,6 +192,13 @@ export default function RoomPage({ params }: { params: Promise<{ roomId: string 
       // Delay clearing so animation can complete
       const timer = setTimeout(() => setCachedResolution(null), 500)
       return () => clearTimeout(timer)
+    }
+  }, [gameState?.phase])
+
+  // Clear activeRoomId when game finishes (so home page doesn't show rejoin)
+  useEffect(() => {
+    if (gameState?.phase === 'finished') {
+      localStorage.removeItem('activeRoomId')
     }
   }, [gameState?.phase])
 

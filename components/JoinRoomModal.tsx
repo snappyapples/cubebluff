@@ -66,6 +66,7 @@ export default function JoinRoomModal({ isOpen, onClose, initialCode = '' }: Joi
       const data = await response.json()
 
       if (data.success) {
+        localStorage.setItem('activeRoomId', roomCode.toUpperCase())
         router.push(`/room/${roomCode.toUpperCase()}`)
       } else {
         setError(data.error || 'Failed to join room')

@@ -56,6 +56,7 @@ export default function CreateRoomModal({ isOpen, onClose }: CreateRoomModalProp
       const data = await response.json()
 
       if (data.success && data.roomCode) {
+        localStorage.setItem('activeRoomId', data.roomCode)
         router.push(`/room/${data.roomCode}`)
       } else {
         setError(data.error || 'Failed to create room')

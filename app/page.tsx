@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, Suspense } from 'react'
-import { useSearchParams } from 'next/navigation'
+import { useSearchParams, useRouter } from 'next/navigation'
 import Header from '@/components/Header'
 import CreateRoomModal from '@/components/CreateRoomModal'
 import JoinRoomModal from '@/components/JoinRoomModal'
@@ -9,10 +9,33 @@ import RulesModal from '@/components/RulesModal'
 
 function HomeContent() {
   const searchParams = useSearchParams()
+  const router = useRouter()
   const [showCreate, setShowCreate] = useState(false)
   const [showJoin, setShowJoin] = useState(false)
   const [showRules, setShowRules] = useState(false)
   const [initialCode, setInitialCode] = useState('')
+  const [activeRoomId, setActiveRoomId] = useState<string | null>(null)
+
+  // Check for active room to show rejoin button
+  useEffect(() => {
+    const storedRoomId = localStorage.getItem('activeRoomId')
+    if (storedRoomId) {
+      // Verify the room still exists
+      fetch(`/api/rooms/${storedRoomId}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.success && data.gameState?.phase !== 'finished') {
+            setActiveRoomId(storedRoomId)
+          } else {
+            // Room no longer exists or game finished - clear it
+            localStorage.removeItem('activeRoomId')
+          }
+        })
+        .catch(() => {
+          localStorage.removeItem('activeRoomId')
+        })
+    }
+  }, [])
 
   // Check for ?code= param to auto-open join modal
   useEffect(() => {
@@ -65,6 +88,21 @@ function HomeContent() {
             Roll. Claim. Bluff. Survive.
           </p>
         </div>
+
+        {/* Rejoin Active Game Banner */}
+        {activeRoomId && (
+          <div className="w-full mb-4">
+            <button
+              onClick={() => router.push(`/room/${activeRoomId}`)}
+              className="w-full flex items-center justify-center gap-3 px-6 py-4 bg-brand-blue/20 border-2 border-brand-blue rounded-xl text-brand-blue font-bold text-lg hover:bg-brand-blue/30 transition-all"
+            >
+              <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+              Rejoin Game ({activeRoomId.toUpperCase()})
+            </button>
+          </div>
+        )}
 
         {/* Action Buttons */}
         <div className="w-full space-y-4 mb-8">
