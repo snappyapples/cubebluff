@@ -3,8 +3,9 @@ import { gameStore } from '@/lib/gameStore'
 import { handleTwentyOneChoice } from '@/lib/gameLogic'
 
 /**
- * POST /api/rooms/[roomId]/twenty-one - Handle 21 choice
- * Player chooses to either double stakes or pass
+ * POST /api/rooms/[roomId]/twenty-one - Handle 21 pass choice
+ * Player chooses to pass on a 21 claim (pay 1 token, new round starts)
+ * Note: Double stakes is now automatic - players roll-to-beat or call bluff directly
  */
 export async function POST(
   request: NextRequest,
@@ -22,10 +23,10 @@ export async function POST(
       )
     }
 
-    // Validate choice
-    if (choice !== 'double_stakes' && choice !== 'pass') {
+    // Only pass is valid now (roll-to-beat and call-bluff have their own endpoints)
+    if (choice !== 'pass') {
       return NextResponse.json(
-        { error: 'Invalid choice. Must be "double_stakes" or "pass"' },
+        { error: 'Invalid choice. Must be "pass"' },
         { status: 400 }
       )
     }
@@ -51,7 +52,7 @@ export async function POST(
 
     const gamePlayerId = mapping.playerId
 
-    // Verify it's this player's turn and correct phase
+    // Verify it's this player's turn
     if (gameState.currentTurnPlayerId !== gamePlayerId) {
       return NextResponse.json(
         { error: 'Not your turn' },
@@ -59,27 +60,23 @@ export async function POST(
       )
     }
 
-    if (gameState.phase !== 'awaiting_21_choice') {
+    // Verify there's a 21 response pending (either via pendingTwentyOneChoice or is21Response)
+    if (!gameState.pendingTwentyOneChoice && !gameState.is21Response) {
       return NextResponse.json(
-        { error: 'No 21 choice pending' },
+        { error: 'No 21 response pending' },
         { status: 400 }
       )
     }
 
-    // Process choice
-    const newState = handleTwentyOneChoice(gameState, gamePlayerId, choice)
+    // Process pass choice
+    const newState = handleTwentyOneChoice(gameState, gamePlayerId, 'pass')
 
     // Save state
     await gameStore.updateGameState(roomId, newState)
 
-    // If they chose double stakes, include their roll so they can make a claim
-    const responseState = choice === 'double_stakes' && gameState.currentRoll
-      ? { ...newState, currentRoll: gameState.currentRoll }
-      : { ...newState, currentRoll: null }
-
     return NextResponse.json({
       success: true,
-      gameState: responseState,
+      gameState: { ...newState, currentRoll: null },
     })
   } catch (error) {
     console.error('Error handling 21 choice:', error)

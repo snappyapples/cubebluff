@@ -100,6 +100,7 @@ export interface GameState {
   // Special states
   isDoubleStakes: boolean       // 21 was called
   pendingTwentyOneChoice: boolean
+  is21Response?: boolean        // True when responding to a 21 claim (shows Pass option)
 
   // Resolution
   lastResolution: Resolution | null

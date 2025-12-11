@@ -57,10 +57,10 @@ module.exports = {
       },
       keyframes: {
         'fade-in-up': {
-          '0%': { opacity: '0', transform: 'translateX(-50%) translateY(10px)' },
-          '20%': { opacity: '1', transform: 'translateX(-50%) translateY(0)' },
-          '80%': { opacity: '1', transform: 'translateX(-50%) translateY(0)' },
-          '100%': { opacity: '0', transform: 'translateX(-50%) translateY(-10px)' },
+          '0%': { opacity: '0', transform: 'translateY(10px)' },
+          '20%': { opacity: '1', transform: 'translateY(0)' },
+          '80%': { opacity: '1', transform: 'translateY(0)' },
+          '100%': { opacity: '0', transform: 'translateY(-10px)' },
         },
         'pulse-danger': {
           '0%, 100%': { opacity: '1', boxShadow: '0 0 0 0 rgba(220, 38, 38, 0)' },

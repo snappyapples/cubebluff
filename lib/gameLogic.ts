@@ -54,6 +54,7 @@ export function initGame(
     claimHistory: [],
     isDoubleStakes: false,
     pendingTwentyOneChoice: false,
+    is21Response: false,
     lastResolution: null,
     roundEndAt: Date.now(), // Brief pause before first round
   }
@@ -121,18 +122,20 @@ export function makeClaim(
     playerName,
   }
 
-  // If claiming 21, next player must decide: accept (double stakes) or pass (pay 1 token)
+  // If claiming 21, mark double stakes and show 21 response options
   const is21Claim = isTwentyOne(claim)
 
   return {
     ...state,
-    phase: is21Claim ? 'awaiting_21_choice' : 'awaiting_response',
+    phase: 'awaiting_response', // Always go to response phase now
     currentClaim: claim,
     previousClaimerId: playerId,
     minimumClaim: claim, // Next claim must be >= this
     currentTurnPlayerId: nextPlayerId,
     claimHistory: [...(state.claimHistory || []), historyEntry],
-    pendingTwentyOneChoice: is21Claim,
+    pendingTwentyOneChoice: is21Claim, // Still track for pass option
+    isDoubleStakes: is21Claim ? true : state.isDoubleStakes, // 21 = double stakes automatically
+    is21Response: is21Claim, // New flag to show Pass option in ActionPanel
     // Keep currentRoll so it can be revealed when bluff is called
   }
 }
@@ -214,6 +217,7 @@ export function callBluff(
     currentRoll: null,
     currentClaim: null,
     previousClaimerId: null,
+    is21Response: false,
   }
 }
 
@@ -222,109 +226,103 @@ export function callBluff(
 // ============================================================================
 
 /**
- * Handle the 21 choice (accept double stakes or pass)
- * Called when next player responds to a 21 claim
+ * Handle the 21 pass choice
+ * Called when player chooses to pass instead of responding to a 21 claim
+ * (Double stakes is now automatic - player can roll-to-beat or call bluff directly)
  */
 export function handleTwentyOneChoice(
   state: GameState,
   playerId: string,
-  choice: 'double_stakes' | 'pass'
+  choice: 'pass'
 ): GameState {
   if (state.currentTurnPlayerId !== playerId) {
     throw new Error('Not your turn')
   }
 
-  if (!state.pendingTwentyOneChoice) {
-    throw new Error('No 21 choice pending')
+  if (!state.pendingTwentyOneChoice && !state.is21Response) {
+    throw new Error('No 21 response pending')
   }
 
-  if (choice === 'double_stakes') {
-    // Player accepts - round becomes double stakes, they must respond (roll-to-beat or call bluff)
+  // Player passes the 21 - pay 1 token, start fresh round
+  const updatedPlayers = state.players.map((p) => {
+    if (p.id === playerId) {
+      const newTokens = Math.max(0, p.tokens - 1)
+      return {
+        ...p,
+        tokens: newTokens,
+        isEliminated: newTokens === 0,
+        eliminatedRound: newTokens === 0 ? state.round : p.eliminatedRound,
+      }
+    }
+    return p
+  })
+
+  const passer = updatedPlayers.find((p) => p.id === playerId)
+  const wasEliminated = passer?.isEliminated
+
+  // Check if game is over
+  const activePlayers = updatedPlayers.filter((p) => !p.isEliminated)
+  if (activePlayers.length <= 1) {
     return {
       ...state,
-      phase: 'awaiting_response',
-      isDoubleStakes: true,
+      phase: 'finished',
+      players: updatedPlayers,
+      lastResolution: {
+        type: 'pass_21',
+        actualRoll: state.currentClaim!, // The claim, not the actual roll
+        claim: state.currentClaim!,
+        claimerId: state.previousClaimerId!,
+        loserId: playerId,
+        tokensLost: 1,
+      },
       pendingTwentyOneChoice: false,
+      is21Response: false,
     }
-  } else {
-    // Player passes the 21 - pay 1 token, choice moves to next player
-    const updatedPlayers = state.players.map((p) => {
-      if (p.id === playerId) {
-        const newTokens = Math.max(0, p.tokens - 1)
-        return {
-          ...p,
-          tokens: newTokens,
-          isEliminated: newTokens === 0,
-          eliminatedRound: newTokens === 0 ? state.round : p.eliminatedRound,
-        }
-      }
-      return p
-    })
+  }
 
-    const passer = updatedPlayers.find((p) => p.id === playerId)
-    const wasEliminated = passer?.isEliminated
-
-    // Check if game is over
-    const activePlayers = updatedPlayers.filter((p) => !p.isEliminated)
-    if (activePlayers.length <= 1) {
-      return {
-        ...state,
-        phase: 'finished',
-        players: updatedPlayers,
-        lastResolution: {
-          type: 'pass_21',
-          actualRoll: state.currentClaim!, // The claim, not the actual roll
-          claim: state.currentClaim!,
-          claimerId: state.previousClaimerId!,
-          loserId: playerId,
-          tokensLost: 1,
-        },
-        pendingTwentyOneChoice: false,
-      }
-    }
-
-    if (wasEliminated) {
-      // Find next player to receive the 21 choice
-      const nextPlayerId = getNextActivePlayer({ ...state, players: updatedPlayers }, playerId)
-
-      return {
-        ...state,
-        phase: 'player_eliminated',
-        players: updatedPlayers,
-        lastResolution: {
-          type: 'pass_21',
-          actualRoll: state.currentClaim!,
-          claim: state.currentClaim!,
-          claimerId: state.previousClaimerId!,
-          loserId: playerId,
-          tokensLost: 1,
-        },
-        eliminationAt: Date.now(),
-        currentTurnPlayerId: nextPlayerId, // Next player gets the choice after elimination delay
-      }
-    }
-
-    // Pass on 21 - start a fresh round with the next player
+  if (wasEliminated) {
+    // Find next player to start fresh round after elimination delay
     const nextPlayerId = getNextActivePlayer({ ...state, players: updatedPlayers }, playerId)
 
-    // Manually start fresh round (don't use startNewRound as it calculates its own starter)
     return {
       ...state,
-      phase: 'round_start',
-      round: state.round + 1,
+      phase: 'player_eliminated',
       players: updatedPlayers,
+      lastResolution: {
+        type: 'pass_21',
+        actualRoll: state.currentClaim!,
+        claim: state.currentClaim!,
+        claimerId: state.previousClaimerId!,
+        loserId: playerId,
+        tokensLost: 1,
+      },
+      eliminationAt: Date.now(),
       currentTurnPlayerId: nextPlayerId,
-      currentRoll: null,
-      currentClaim: null,
-      previousClaimerId: null,
-      minimumClaim: null,
-      claimHistory: [],
-      isDoubleStakes: false,
-      pendingTwentyOneChoice: false,
-      lastResolution: null,
-      bluffVotes: {},
-      roundEndAt: Date.now(),
+      is21Response: false,
     }
+  }
+
+  // Pass on 21 - start a fresh round with the next player
+  const nextPlayerId = getNextActivePlayer({ ...state, players: updatedPlayers }, playerId)
+
+  // Manually start fresh round (don't use startNewRound as it calculates its own starter)
+  return {
+    ...state,
+    phase: 'round_start',
+    round: state.round + 1,
+    players: updatedPlayers,
+    currentTurnPlayerId: nextPlayerId,
+    currentRoll: null,
+    currentClaim: null,
+    previousClaimerId: null,
+    minimumClaim: null,
+    claimHistory: [],
+    isDoubleStakes: false,
+    pendingTwentyOneChoice: false,
+    is21Response: false,
+    lastResolution: null,
+    bluffVotes: {},
+    roundEndAt: Date.now(),
   }
 }
 
@@ -377,6 +375,7 @@ export function startNewRound(state: GameState): GameState {
     claimHistory: [],
     isDoubleStakes: false,
     pendingTwentyOneChoice: false,
+    is21Response: false,
     lastResolution: null,
     bluffVotes: {}, // Clear votes for new round
     roundEndAt: Date.now(),

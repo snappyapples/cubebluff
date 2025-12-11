@@ -8,6 +8,8 @@ import ClaimList from '@/components/ClaimList'
 import TwentyOneModal from '@/components/TwentyOneModal'
 import BluffResolution from '@/components/BluffResolution'
 import GameOverScreen from '@/components/GameOverScreen'
+import Confetti from '@/components/Confetti'
+import EliminationModal from '@/components/EliminationModal'
 import RulesModal from '@/components/RulesModal'
 import ClaimAnnouncement from '@/components/ClaimAnnouncement'
 import BluffVoting from '@/components/BluffVoting'
@@ -49,6 +51,7 @@ export default function RoomPage({ params }: { params: Promise<{ roomId: string 
   const rollInProgressRef = useRef(false) // Debounce protection for rolls
   const [lastSeenClaim, setLastSeenClaim] = useState<string | null>(null)
   const [showClaimAnnouncement, setShowClaimAnnouncement] = useState(false)
+  const [twentyOneModalDismissed, setTwentyOneModalDismissed] = useState(false)
 
   // Vote toast system
   interface VoteToast {
@@ -467,8 +470,8 @@ export default function RoomPage({ params }: { params: Promise<{ roomId: string 
     }
   }
 
-  // Handle 21 choice
-  const handleTwentyOneChoice = async (choice: 'double_stakes' | 'pass') => {
+  // Handle 21 pass choice (only pass is now available - roll/call bluff use normal handlers)
+  const handlePass = async () => {
     setIsLoading(true)
 
     try {
@@ -478,7 +481,7 @@ export default function RoomPage({ params }: { params: Promise<{ roomId: string 
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           playerId: currentPlayerId,
-          choice,
+          choice: 'pass',
         }),
       })
 
@@ -486,14 +489,12 @@ export default function RoomPage({ params }: { params: Promise<{ roomId: string 
 
       if (data.success) {
         setGameState(data.gameState)
-        // Don't set myRoll here - currentRoll is the claimer's roll, not ours
-        // The player hasn't rolled yet after accepting the 21 challenge
         setMyRoll(null)
       } else {
-        setError(data.error || 'Failed to make choice')
+        setError(data.error || 'Failed to pass')
       }
     } catch (err) {
-      setError('Failed to make choice')
+      setError('Failed to pass')
     } finally {
       setIsLoading(false)
     }
@@ -622,6 +623,7 @@ export default function RoomPage({ params }: { params: Promise<{ roomId: string 
     if (gameState?.phase === 'round_start' || gameState?.phase === 'resolving_bluff') {
       setVoteToasts([])
       seenVotesRef.current = {}
+      setTwentyOneModalDismissed(false) // Reset 21 modal for new round
     }
   }, [gameState?.phase])
 
@@ -892,13 +894,16 @@ export default function RoomPage({ params }: { params: Promise<{ roomId: string 
             onRoll={handleRoll}
             onCallBluff={handleCallBluff}
             onRollToBeat={handleRollToBeat}
+            onPass={handlePass}
             isLoading={isLoading}
             previousClaimerName={previousClaimer?.name}
+            is21Response={gameState.is21Response}
+            isDoubleStakes={gameState.isDoubleStakes}
           />
         </div>
 
-        {/* Bluff Voting - Fixed corner buttons for spectators during awaiting_response or awaiting_21_choice */}
-        {(gameState.phase === 'awaiting_response' || gameState.phase === 'awaiting_21_choice') && gameState.currentClaim && (
+        {/* Bluff Voting - Fixed corner buttons for spectators during awaiting_response */}
+        {gameState.phase === 'awaiting_response' && gameState.currentClaim && (
           <BluffVoting
             players={gameState.players}
             myPlayerId={myGamePlayerId}
@@ -950,12 +955,11 @@ export default function RoomPage({ params }: { params: Promise<{ roomId: string 
       </main>
 
       {/* Modals / Overlays */}
+      {/* Educational 21 modal - shows once when responding to 21 claim */}
       <TwentyOneModal
-        isOpen={gameState.phase === 'awaiting_21_choice' && isMyTurn}
+        isOpen={!!gameState.is21Response && isMyTurn && !twentyOneModalDismissed}
         claimerName={previousClaimer?.name || 'Someone'}
-        onDoubleStakes={() => handleTwentyOneChoice('double_stakes')}
-        onPass={() => handleTwentyOneChoice('pass')}
-        isLoading={isLoading}
+        onDismiss={() => setTwentyOneModalDismissed(true)}
       />
 
       <ClaimAnnouncement
@@ -967,9 +971,16 @@ export default function RoomPage({ params }: { params: Promise<{ roomId: string 
       <BluffResolution
         resolution={(cachedResolution || gameState.lastResolution)!}
         players={gameState.players}
-        isOpen={(gameState.phase === 'resolving_bluff' || gameState.phase === 'player_eliminated') && !!(cachedResolution || gameState.lastResolution)}
+        isOpen={gameState.phase === 'resolving_bluff' && !!(cachedResolution || gameState.lastResolution)}
         myPlayerId={myGamePlayerId}
         claimerId={cachedResolution?.claimerId || gameState.lastResolution?.claimerId || null}
+      />
+
+      <EliminationModal
+        isOpen={gameState.phase === 'player_eliminated'}
+        resolution={cachedResolution || gameState.lastResolution}
+        players={gameState.players}
+        myPlayerId={myGamePlayerId}
       />
 
       <GameOverScreen
@@ -978,6 +989,9 @@ export default function RoomPage({ params }: { params: Promise<{ roomId: string 
         onPlayAgain={handlePlayAgain}
         isOpen={gameState.phase === 'finished'}
       />
+
+      {/* Confetti celebration when game is finished */}
+      {gameState.phase === 'finished' && <Confetti />}
     </div>
   )
 }

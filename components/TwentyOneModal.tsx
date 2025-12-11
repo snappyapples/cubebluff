@@ -5,17 +5,13 @@ import ThreeDDice from './ThreeDDice'
 interface TwentyOneModalProps {
   isOpen: boolean
   claimerName: string
-  onDoubleStakes: () => void
-  onPass: () => void
-  isLoading: boolean
+  onDismiss: () => void
 }
 
 export default function TwentyOneModal({
   isOpen,
   claimerName,
-  onDoubleStakes,
-  onPass,
-  isLoading,
+  onDismiss,
 }: TwentyOneModalProps) {
   if (!isOpen) return null
 
@@ -48,37 +44,26 @@ export default function TwentyOneModal({
           </div>
         </div>
 
-        {/* Instructions */}
-        <p className="text-center text-gray-400 text-sm mb-6">
-          What will you do?
-        </p>
-
-        {/* Choices */}
-        <div className="space-y-3">
-          <button
-            onClick={onDoubleStakes}
-            disabled={isLoading}
-            className="w-full py-4 bg-token-gold hover:bg-yellow-500 text-black font-bold rounded-xl transition-all transform hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50"
-          >
-            <span className="text-lg">Accept Challenge</span>
-            <p className="text-sm opacity-80">Double stakes - 2 tokens at risk</p>
-          </button>
-
-          <button
-            onClick={onPass}
-            disabled={isLoading}
-            className="w-full py-4 bg-panel-bg hover:bg-card-bg text-white font-medium rounded-xl border border-gray-600 transition-all disabled:opacity-50"
-          >
-            <span className="text-lg">Pass</span>
-            <p className="text-sm text-gray-400">Pay 1 token, pass to next player</p>
-          </button>
+        {/* Educational content */}
+        <div className="bg-panel-bg rounded-xl p-4 mb-6 text-sm">
+          <p className="text-token-gold font-semibold mb-2">Double Stakes!</p>
+          <p className="text-gray-300 mb-2">
+            21 is the highest possible roll. When someone claims 21, the stakes are doubled -
+            <span className="text-bluff-red font-semibold"> 2 tokens at risk</span>.
+          </p>
+          <p className="text-gray-400">
+            You can <span className="text-white">Roll to Beat</span>, <span className="text-bluff-red">Call Bluff</span>,
+            or <span className="text-gray-300">Pass</span> (costs 1 token).
+          </p>
         </div>
 
-        {isLoading && (
-          <p className="text-center text-gray-400 text-sm mt-4">
-            Processing...
-          </p>
-        )}
+        {/* I Understand button */}
+        <button
+          onClick={onDismiss}
+          className="w-full py-4 bg-token-gold hover:bg-yellow-500 text-black font-bold rounded-xl transition-all transform hover:scale-[1.02] active:scale-[0.98]"
+        >
+          I Understand
+        </button>
       </div>
     </div>
   )

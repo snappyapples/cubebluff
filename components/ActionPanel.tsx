@@ -16,8 +16,11 @@ interface ActionPanelProps {
   onRoll: () => void
   onCallBluff: () => void
   onRollToBeat: () => void
+  onPass?: () => void // For 21 response
   isLoading: boolean
   previousClaimerName?: string
+  is21Response?: boolean // True when responding to a 21 claim
+  isDoubleStakes?: boolean // Show double stakes warning
 }
 
 export default function ActionPanel({
@@ -33,8 +36,11 @@ export default function ActionPanel({
   onRoll,
   onCallBluff,
   onRollToBeat,
+  onPass,
   isLoading,
   previousClaimerName,
+  is21Response,
+  isDoubleStakes,
 }: ActionPanelProps) {
   const currentPlayer = players.find(p => p.id === currentTurnPlayerId)
   const is21 = myRoll ? isTwentyOne(myRoll) : false
@@ -190,9 +196,20 @@ export default function ActionPanel({
     return (
       <div className="space-y-3 pb-3 border-b border-gray-800 mb-3">
         {playerBubblesJSX}
+
+        {/* Double stakes indicator for 21 response */}
+        {isDoubleStakes && (
+          <div className="text-center">
+            <span className="inline-block px-3 py-1 bg-bluff-red/20 text-bluff-red text-xs font-semibold rounded-full animate-pulse">
+              DOUBLE STAKES - 2 tokens at risk!
+            </span>
+          </div>
+        )}
+
         <p className="text-center text-gray-300 text-sm">
           {previousClaimerName} claims <span className="text-brand-blue font-bold">{currentClaim?.display}</span>
         </p>
+
         <div className="grid grid-cols-2 gap-3">
           <button
             onClick={onRollToBeat}
@@ -209,6 +226,17 @@ export default function ActionPanel({
             {isLoading ? '...' : 'Call Bluff!'}
           </button>
         </div>
+
+        {/* Pass option for 21 response */}
+        {is21Response && onPass && (
+          <button
+            onClick={onPass}
+            disabled={isLoading}
+            className="w-full btn-secondary py-3 text-sm"
+          >
+            {isLoading ? '...' : 'Pass (lose 1 token)'}
+          </button>
+        )}
       </div>
     )
   }

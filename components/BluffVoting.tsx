@@ -28,13 +28,14 @@ export default function BluffVoting({
   onVote,
   canVote
 }: BluffVotingProps) {
-  // Can this player vote? Not the claimer, not the responder (current turn), and not eliminated
+  // Can this player vote? Not the claimer, not the responder (current turn)
+  // Eliminated players CAN still vote as spectators
   const myPlayer = players.find(p => p.id === myPlayerId)
   const claimer = players.find(p => p.id === previousClaimerId)
   const isEligible = canVote &&
     myPlayerId !== previousClaimerId &&
     myPlayerId !== currentTurnPlayerId &&
-    myPlayer && !myPlayer.isEliminated
+    myPlayer
 
   return (
     <>
