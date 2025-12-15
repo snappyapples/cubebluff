@@ -113,6 +113,12 @@ function HomeContent() {
         {/* Footer */}
         <div className="mt-12 text-center text-gray-600 text-sm">
           <p>A multiplayer bluffing dice game</p>
+          <p className="mt-4">
+            <span>More games: </span>
+            <a href="https://bankitgame.vercel.app/" target="_blank" rel="noopener noreferrer" className="text-gray-500 hover:text-white transition-colors">BankIt</a>
+            <span className="mx-2">·</span>
+            <a href="https://paper-maner-io-2.vercel.app/" target="_blank" rel="noopener noreferrer" className="text-gray-500 hover:text-white transition-colors">Paper.io</a>
+          </p>
         </div>
       </div>
 

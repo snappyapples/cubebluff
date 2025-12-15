@@ -19,7 +19,10 @@
       "Bash(git push:*)",
       "Bash(git remote set-url:*)",
       "mcp__ide__getDiagnostics",
-      "Bash(npm run build:*)"
+      "Bash(npm run build:*)",
+      "Bash(where:*)",
+      "Bash(where convert)",
+      "Bash(node:*)"
     ],
     "deny": [],
     "ask": []

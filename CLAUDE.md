@@ -75,9 +75,11 @@ User Action → API Route → Server Game Logic → New State → Supabase → P
 5. Round ends, next round starts
 
 **Special 21 Rule:**
-- When a player CLAIMS 21 (whether true or bluff), the next player must choose:
-  - "Accept Challenge" = double stakes (2 tokens at risk), then respond normally
-  - "Pass" = pay 1 token, fresh round starts with the next player
+- When a player CLAIMS 21 (whether true or bluff):
+  - Double stakes applies automatically (2 tokens at risk)
+  - Educational modal explains the rules, player clicks "I Understand"
+  - Player then has 3 options: Roll to Beat, Call Bluff, or Pass (costs 1 token)
+  - Pass starts a fresh round with the next player
 
 ### Multiplayer Architecture
 
@@ -114,13 +116,17 @@ type GamePhase =
   | 'lobby'              // Waiting for players
   | 'round_start'        // Brief pause before round (2s)
   | 'awaiting_roll'      // Player must roll
-  | 'awaiting_21_choice' // Player rolled 21, must choose
   | 'awaiting_claim'     // Player has rolled, must claim
-  | 'awaiting_response'  // Next player must roll-to-beat or call bluff
-  | 'resolving_bluff'    // Showing bluff resolution (4s)
+  | 'awaiting_response'  // Next player must roll-to-beat or call bluff (includes 21 response)
+  | 'resolving_bluff'    // Showing bluff resolution (6s)
   | 'player_eliminated'  // Showing elimination (3s)
   | 'finished'           // Game over
 ```
+
+**21 Response State:**
+- When responding to a 21 claim, `gameState.is21Response` is true
+- Shows educational modal first, then Pass button in ActionPanel
+- `isDoubleStakes` is automatically set to true
 
 **Auto-Transition Delays** (`lib/gameLogic.ts`):
 - `RESOLUTION_DELAY = 6000` - Show bluff result
@@ -245,11 +251,25 @@ interface Resolution {
 - `game-bg`, `panel-bg`, `card-bg` - Panel backgrounds
 
 **Custom Animations**:
-- `fade-in-up` - Floating effect text
+- `fade-in-up` - Floating effect text (voting toasts)
 - `slide-in` / `slide-out` - Modal transitions
 - `shake` - Alert animation
 - `bounce-in` - Entry animation
 - `token-fall` - Token loss animation
+- `confetti-fall` - Victory confetti (defined in `Confetti.tsx` via styled-jsx)
+
+### Victory & Elimination Screens
+
+**Confetti** (`components/Confetti.tsx`):
+- CSS-based confetti with no external dependencies
+- 150 particles with randomized colors, positions, sizes, delays
+- Mix of circles and squares for visual variety
+- Renders when `phase === 'finished'`
+
+**Elimination Modal** (`components/EliminationModal.tsx`):
+- Full-screen "💀 OUT!" modal when player is eliminated
+- Shows player name, round number, and token loss animation
+- Separate from BluffResolution (which shows during `resolving_bluff` phase)
 
 ## Environment Setup
 
@@ -274,8 +294,9 @@ Room codes use fun, memorable words instead of random alphanumeric strings:
 ### Crowd Voting (`components/BluffVoting.tsx`)
 
 Non-participating players can vote on whether a claim is bluff or truth:
-- Available during `awaiting_response` and `awaiting_21_choice` phases
+- Available during `awaiting_response` phase
 - Claimer and current turn player cannot vote
+- Eliminated players CAN vote as spectators
 - Votes stored with timestamps for reliable cross-player toast detection
 - Toast notifications appear when other players vote
 
@@ -286,6 +307,27 @@ Players can rejoin rooms after disconnection:
 - Auto-rejoin attempts on page load via `autoRejoinAttemptedRef`
 - "Rejoin Game" button on home page when `activeRoomId` is set
 - Join API allows nickname-matching rejoin even after game starts
+
+### Sound System (`lib/sounds.ts`, `hooks/useSounds.ts`)
+
+Audio feedback using HTMLAudioElement pooling (up to 5 instances per sound URL):
+- `roll` - Dice rolling (SoundBible)
+- `claim` - Claim submitted (Mixkit chip slide)
+- `twentyOne` - 21 claimed (Mixkit jackpot)
+- `bluffCall` - Someone calls bluff (Mixkit dramatic sting)
+- `bluffSuccess` - Caller was right, bluff caught (Mixkit success)
+- `bluffFail` - Claimer was honest (Mixkit negative fail)
+- `elimination` - Player eliminated (random sad trombone/wrong answer)
+- `tokenLost` - Tokens lost (Mixkit coin drop)
+- `victory` - Game winner (local `/sounds/victory.mp3`)
+
+**Sound Triggers** (in `page.tsx`):
+- Direct triggers: `handleRoll`, `handleRollToBeat`, `handleClaim`, `handleCallBluff`
+- Polling-based triggers: Phase changes detected via `prevStateRef` comparison
+
+**User Preferences:**
+- localStorage: `soundEnabled` (boolean), `soundVolume` (0-1)
+- iOS unlock pattern: `soundManager.unlock()` on first user interaction
 
 ## Key Implementation Details
 
@@ -300,7 +342,7 @@ Players can rejoin rooms after disconnection:
 - `_players` mapping in game state converts to game player ID (`player-0`, etc.)
 - Room page checks player by nickname match, not just playerId
 
-**21 Choice Handling:** After accepting a 21 challenge, `myRoll` must be set to `null` - the `gameState.currentRoll` is the claimer's roll, not the responder's. The responder hasn't rolled yet.
+**21 Response Handling:** When responding to a 21 claim, `is21Response` flag is true and double stakes is automatic. The responder can Roll to Beat, Call Bluff, or Pass (via `/api/rooms/[roomId]/twenty-one` endpoint).
 
 **Next.js 15+ Gotcha:** `styled-jsx` doesn't work reliably. Use inline styles or Tailwind classes instead.
 
